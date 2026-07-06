@@ -1,0 +1,4709 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Мини-доска заметок v1.5.0</title>
+    <style>
+        /* ===== ПЕРЕМЕННЫЕ ТЕМ ===== */
+        :root {
+            --bg-primary: #1e1e2f;
+            --bg-secondary: #2a2a3e;
+            --bg-card: #2a2a3e;
+            --bg-input: #2a2a3e;
+            --bg-hover: #32324a;
+            --text-primary: #ffffff;
+            --text-secondary: #aaaacc;
+            --text-muted: #666688;
+            --border-color: #3d3d5c;
+            --border-hover: #5c4fd0;
+            --shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            --accent: #7c6df0;
+            --accent-hover: #6a5cdb;
+            --accent-gradient: linear-gradient(135deg, #7c6df0, #a78bfa, #f093fb);
+            --danger: #ff6b6b;
+            --success: #51cf66;
+            --warning: #ffd93d;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --star-color: #ffffff;
+            --star-shadow: rgba(255, 255, 255, 0.3);
+            --welcome-bg: rgba(42, 42, 62, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-input: #f0f2f5;
+            --bg-hover: #e8ebf0;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555577;
+            --text-muted: #8888aa;
+            --border-color: #d0d0dd;
+            --border-hover: #7c6df0;
+            --shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            --accent: #7c6df0;
+            --accent-hover: #6a5cdb;
+            --accent-gradient: linear-gradient(135deg, #7c6df0, #a78bfa, #f093fb);
+            --star-color: #1a1a2e;
+            --star-shadow: rgba(26, 26, 46, 0.15);
+            --welcome-bg: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(0, 0, 0, 0.08);
+        }
+
+        /* ===== ОБЩИЕ СТИЛИ ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: var(--bg-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px 15px;
+            transition: background var(--transition), color var(--transition);
+            color: var(--text-primary);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .app {
+            max-width: 1100px;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ===== TOAST УВЕДОМЛЕНИЯ ===== */
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 350px;
+        }
+
+        .toast {
+            padding: 14px 20px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            color: var(--text-primary);
+            font-size: 14px;
+            animation: slideInToast 0.4s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast.info { border-left: 4px solid var(--accent); }
+
+        @keyframes slideInToast {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes fadeOutToast {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100px); }
+        }
+
+        .toast.hide {
+            animation: fadeOutToast 0.3s ease-in forwards;
+        }
+
+        /* ===== ЗВЁЗДНЫЙ ФОН ===== */
+        .stars-container {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+            transition: opacity 0.8s ease;
+            background: transparent;
+        }
+
+        .stars-container.hidden {
+            opacity: 0;
+        }
+
+        .star {
+            position: absolute;
+            border-radius: 50%;
+            animation: twinkle var(--duration) ease-in-out infinite alternate;
+            opacity: var(--opacity);
+            background: var(--star-color);
+            box-shadow: 0 0 4px var(--star-shadow), 0 0 8px var(--star-shadow);
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .star.small { width: 2px; height: 2px; animation-duration: 3s; }
+        .star.medium { width: 3px; height: 3px; animation-duration: 4s; }
+        .star.large { width: 4px; height: 4px; animation-duration: 5s; }
+
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.3); }
+            100% { opacity: 0.3; transform: scale(0.9); }
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(10px, -5px) scale(1.1); }
+            50% { transform: translate(-5px, 10px) scale(0.9); }
+            75% { transform: translate(8px, 5px) scale(1.05); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        .star.floating {
+            animation: twinkle var(--duration) ease-in-out infinite alternate,
+                       float calc(var(--duration) * 3) ease-in-out infinite;
+        }
+
+        .shooting-star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--star-color);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--star-shadow), 0 0 12px var(--star-shadow);
+            animation: shooting calc(var(--duration) * 0.8) linear infinite;
+            opacity: 0;
+        }
+
+        .shooting-star::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(to left, var(--star-color), transparent);
+            transform: rotate(0deg);
+            transform-origin: right center;
+        }
+
+        @keyframes shooting {
+            0% { transform: translate(0, 0) rotate(-35deg); opacity: 0; }
+            10% { opacity: 1; }
+            20% { opacity: 1; }
+            30% { opacity: 0; transform: translate(-200px, 120px) rotate(-35deg); }
+            100% { opacity: 0; transform: translate(-200px, 120px) rotate(-35deg); }
+        }
+
+        /* ===== СТРАНИЦЫ ===== */
+        .page {
+            display: none;
+            animation: fadeIn 0.5s ease;
+            position: relative;
+            z-index: 1;
+        }
+        .page.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes newPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+
+        .badge-new {
+            display: inline-block;
+            background: var(--danger);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 8px;
+            border-radius: 10px;
+            margin-left: 6px;
+            animation: newPulse 1.5s ease-in-out infinite;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== PIN-КОД ===== */
+        .pin-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .pin-overlay.hidden {
+            display: none;
+        }
+
+        .pin-box {
+            background: var(--bg-secondary);
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+        }
+
+        .pin-box h2 {
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .pin-box .pin-status {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .pin-box .pin-dots {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .pin-box .pin-dots .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .pin-box .pin-dots .dot.filled {
+            background: var(--accent);
+            border-color: var(--accent);
+            transform: scale(1.1);
+        }
+
+        .pin-box .pin-dots .dot.error {
+            border-color: var(--danger);
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .pin-box .pin-keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .pin-box .pin-keypad button {
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            font-size: 22px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pin-box .pin-keypad button:hover {
+            background: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .pin-box .pin-keypad button:active {
+            transform: scale(0.95);
+        }
+
+        .pin-box .pin-keypad .clear-btn {
+            background: var(--danger);
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .pin-box .pin-keypad .clear-btn:hover {
+            opacity: 0.8;
+        }
+
+        .pin-box .pin-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .pin-box .pin-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .pin-box .pin-actions .unlock-btn {
+            background: var(--accent-gradient);
+            color: #fff;
+        }
+
+        .pin-box .pin-actions .unlock-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .pin-box .pin-actions .cancel-btn {
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+        }
+
+        .pin-box .pin-actions .cancel-btn:hover {
+            background: var(--border-color);
+        }
+
+        /* ===== ГЛАВНАЯ СТРАНИЦА ===== */
+        .welcome {
+            text-align: center;
+            max-width: 600px;
+            margin: 60px auto;
+            position: relative;
+            background: var(--welcome-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 50px 40px;
+            border-radius: 32px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+            transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .welcome:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-hover);
+            box-shadow: 0 35px 90px rgba(124, 109, 240, 0.15);
+        }
+
+        .welcome h1 {
+            font-size: 56px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            letter-spacing: -2px;
+            position: relative;
+            display: inline-block;
+            color: #ffffff;
+            background: linear-gradient(135deg, #ffffff 0%, #7c6df0 50%, #a78bfa 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientFlow 5s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(124, 109, 240, 0.2));
+            transition: filter 0.3s ease;
+            text-shadow: none;
+        }
+
+        .welcome h1:hover {
+            filter: drop-shadow(0 0 50px rgba(124, 109, 240, 0.5));
+        }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .welcome h1::before {
+            content: '📌 Доска заметок';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #ffffff 0%, #7c6df0 50%, #a78bfa 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientFlow 5s ease-in-out infinite;
+            filter: blur(25px);
+            opacity: 0.3;
+            z-index: -1;
+            transform: scale(1.05);
+        }
+
+        .welcome h1::after {
+            content: '📌 Доска заметок';
+            position: absolute;
+            inset: 0;
+            color: transparent;
+            -webkit-text-stroke: 2px rgba(124, 109, 240, 0.15);
+            z-index: -1;
+            transform: translate(3px, 3px);
+        }
+
+        [data-theme="light"] .welcome h1 {
+            background: linear-gradient(135deg, #1a1a2e 0%, #7c6df0 50%, #a78bfa 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientFlow 5s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(124, 109, 240, 0.15));
+        }
+
+        [data-theme="light"] .welcome h1::before {
+            background: linear-gradient(135deg, #1a1a2e 0%, #7c6df0 50%, #a78bfa 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientFlow 5s ease-in-out infinite;
+            opacity: 0.15;
+        }
+
+        .welcome .subtitle {
+            color: var(--text-secondary);
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .welcome .version-badge {
+            display: inline-block;
+            background: var(--accent-gradient);
+            color: #fff;
+            padding: 4px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 32px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(124, 109, 240, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .welcome .version-badge:hover { transform: scale(1.05); }
+
+        .greeting {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 32px;
+            padding: 12px 32px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            display: inline-block;
+            animation: slideUp 0.8s ease-out 0.2s both;
+            transition: all 0.3s ease;
+        }
+
+        .greeting:hover {
+            border-color: var(--border-hover);
+            transform: scale(1.02);
+        }
+
+        /* ===== СТАТИСТИКА НА ГЛАВНОЙ ===== */
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            margin-bottom: 32px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .dashboard-stats .stat-item {
+            text-align: center;
+            padding: 8px;
+        }
+
+        .dashboard-stats .stat-item .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .dashboard-stats .stat-item .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ===== КНОПКИ ===== */
+        .action-group {
+            display: flex;
+            gap: 10px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 20px;
+            padding: 8px;
+            margin-bottom: 36px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: var(--shadow);
+            transition: all var(--transition);
+        }
+
+        .action-group:hover {
+            border-color: var(--border-hover);
+            box-shadow: 0 0 0 4px rgba(124, 109, 240, 0.1), var(--shadow);
+        }
+
+        .action-group .action-btn {
+            flex: 1;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 14px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-group .action-btn .icon {
+            font-size: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .action-group .action-btn:hover .icon {
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        .action-group .action-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 14px;
+        }
+
+        .action-group .action-btn:hover::after {
+            opacity: 0.05;
+        }
+
+        .action-group .action-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(124, 109, 240, 0.2);
+        }
+
+        .action-group .action-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .action-group .action-btn.primary {
+            background: var(--accent-gradient);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(124, 109, 240, 0.3);
+        }
+
+        .action-group .action-btn.primary::after {
+            display: none;
+        }
+
+        .action-group .action-btn.primary:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 8px 30px rgba(124, 109, 240, 0.4);
+        }
+
+        /* ===== ТЕМЫ ===== */
+        .theme-selector {
+            margin: 0 auto;
+            padding: 24px 28px;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            max-width: 420px;
+            box-shadow: var(--shadow);
+            transition: all var(--transition);
+        }
+
+        .theme-selector:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(124, 109, 240, 0.1);
+        }
+
+        .theme-selector label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 14px;
+            color: var(--text-secondary);
+            font-size: 15px;
+            letter-spacing: 0.3px;
+        }
+
+        .theme-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .theme-options button {
+            padding: 10px 24px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all var(--transition);
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .theme-options button:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(124, 109, 240, 0.15);
+        }
+
+        .theme-options button.active-theme {
+            border-color: var(--accent);
+            background: var(--accent-gradient);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(124, 109, 240, 0.3);
+            transform: scale(1.02);
+        }
+
+        .theme-options button.active-theme::after {
+            content: ' ✓';
+            font-weight: 700;
+        }
+
+        /* ===== ИНСТРУКЦИЯ ===== */
+        .instructions {
+            max-width: 700px;
+            margin: 30px auto;
+            padding: 35px;
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .instructions h2 {
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            font-size: 28px;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .instructions ul li {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .instructions ul li:hover {
+            color: var(--text-primary);
+            padding-left: 8px;
+        }
+
+        .instructions ul li:last-child { border-bottom: none; }
+        .instructions ul li .emoji { font-size: 18px; min-width: 28px; }
+
+        .instructions .back-btn {
+            margin-top: 24px;
+            padding: 12px 28px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition);
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .instructions .back-btn:hover {
+            background: var(--accent-gradient);
+            color: #fff;
+            border-color: var(--accent);
+            transform: translateX(-4px);
+        }
+
+        /* ===== CHANGELOG ===== */
+        .changelog-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            animation: fadeIn 0.3s ease;
+            backdrop-filter: blur(8px);
+            padding: 20px;
+        }
+
+        .changelog-content {
+            background: var(--bg-secondary);
+            padding: 35px;
+            border-radius: 24px;
+            max-width: 580px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .changelog-content h2 {
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .changelog-content .version-block {
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .changelog-content .version-block:hover { padding-left: 8px; }
+        .changelog-content .version-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+        .changelog-content .version-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .changelog-content .version-header .version {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .changelog-content .version-header .version-tag {
+            display: inline-block;
+            padding: 2px 14px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--bg-hover);
+            color: var(--text-muted);
+        }
+
+        .changelog-content .version-header .version-tag.current {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .changelog-content .version-date {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .changelog-content .version-changes {
+            list-style: none;
+            padding: 0;
+        }
+
+        .changelog-content .version-changes li {
+            padding: 4px 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .changelog-content .version-changes li:hover {
+            color: var(--text-primary);
+            padding-left: 4px;
+        }
+
+        .changelog-content .version-changes li .emoji { font-size: 16px; }
+
+        .changelog-content .close-btn {
+            margin-top: 24px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+            transition: all var(--transition);
+        }
+
+        .changelog-content .close-btn:hover {
+            background: var(--accent-gradient);
+            color: #fff;
+            transform: scale(1.02);
+        }
+
+        /* ===== ДОСКА ===== */
+        .board-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .board-header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .board-header .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .board-header .header-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            transition: all var(--transition);
+            font-size: 13px;
+        }
+
+        .board-header .header-actions button:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(124, 109, 240, 0.15);
+        }
+
+        .board-header .header-actions .back-home {
+            background: var(--accent-gradient);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .board-header .header-actions .back-home:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 4px 20px rgba(124, 109, 240, 0.3);
+        }
+
+        .board-header .header-actions .trash-btn {
+            background: transparent;
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .board-header .header-actions .trash-btn:hover {
+            background: var(--danger);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .board-header .header-actions .trash-btn .badge {
+            background: var(--danger);
+            color: #fff;
+            border-radius: 50%;
+            padding: 0 6px;
+            font-size: 11px;
+            margin-left: 4px;
+        }
+
+        .board-header .header-actions .trash-btn:hover .badge {
+            background: #fff;
+            color: var(--danger);
+        }
+
+        .board-header .header-actions .lock-btn {
+            background: transparent;
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        .board-header .header-actions .lock-btn:hover {
+            background: var(--warning);
+            color: #1a1a1a;
+        }
+
+        /* ===== ГРУППОВЫЕ ОПЕРАЦИИ ===== */
+        .bulk-actions {
+            display: none;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            border: 2px solid var(--accent);
+            margin-bottom: 16px;
+            align-items: center;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .bulk-actions.show {
+            display: flex;
+        }
+
+        .bulk-actions .bulk-info {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-right: 8px;
+            font-weight: 500;
+        }
+
+        .bulk-actions button {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 8px;
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all var(--transition);
+            border: 1px solid var(--border-color);
+        }
+
+        .bulk-actions button:hover {
+            background: var(--accent-gradient);
+            color: #fff;
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .bulk-actions button.danger:hover {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .bulk-actions select {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .bulk-actions select:focus {
+            border-color: var(--accent);
+        }
+
+        /* ===== БЫСТРЫЕ ФИЛЬТРЫ ===== */
+        .quick-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            align-items: center;
+        }
+
+        .quick-filters .filter-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 4px;
+        }
+
+        .quick-filters .filter-btn {
+            padding: 4px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all var(--transition);
+        }
+
+        .quick-filters .filter-btn:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .quick-filters .filter-btn.active {
+            background: var(--accent-gradient);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .stats {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 16px;
+            animation: slideUp 0.5s ease-out 0.1s both;
+        }
+
+        /* ===== ТУЛБАР ===== */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            align-items: center;
+            animation: slideUp 0.5s ease-out 0.2s both;
+        }
+
+        .add-note {
+            display: flex;
+            gap: 12px;
+            flex: 2 1 100%;
+            flex-wrap: wrap;
+        }
+
+        .add-note input {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 12px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 15px;
+            outline: 1px solid var(--border-color);
+            transition: all var(--transition);
+        }
+
+        .add-note input:focus {
+            outline: 2px solid var(--accent);
+            background: var(--bg-hover);
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(124, 109, 240, 0.15);
+        }
+
+        .add-note input::placeholder { color: var(--text-muted); }
+        .add-note .note-input { flex: 2; min-width: 150px; }
+        .add-note .tag-input { flex: 1; min-width: 120px; }
+
+        .add-note .add-btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 12px;
+            background: var(--accent-gradient);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(124, 109, 240, 0.3);
+        }
+
+        .add-note .add-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 30px rgba(124, 109, 240, 0.4);
+        }
+
+        .add-note .add-btn:active { transform: scale(0.98); }
+
+        .add-note-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        /* ===== ШАБЛОНЫ ===== */
+        .template-btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            transition: all var(--transition);
+            font-size: 15px;
+            white-space: nowrap;
+        }
+
+        .template-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(124, 109, 240, 0.15);
+        }
+
+        .template-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .template-dropdown-content {
+            display: none;
+            position: absolute;
+            background: var(--bg-secondary);
+            min-width: 200px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            z-index: 50;
+            padding: 6px 0;
+            margin-top: 4px;
+            animation: slideUp 0.2s ease-out;
+        }
+
+        .template-dropdown-content.show { display: block; }
+
+        .template-dropdown-content .template-item {
+            padding: 10px 18px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all var(--transition);
+            font-size: 14px;
+        }
+
+        .template-dropdown-content .template-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            padding-left: 24px;
+        }
+
+        /* ===== ПОДСКАЗКИ ТЕГОВ ===== */
+        .tag-suggestions {
+            display: none;
+            position: absolute;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 6px 0;
+            min-width: 150px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: var(--shadow);
+            margin-top: 4px;
+            animation: slideUp 0.2s ease-out;
+        }
+
+        .tag-suggestions.show { display: block; }
+
+        .tag-suggestions .suggestion-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 14px;
+            transition: all var(--transition);
+        }
+
+        .tag-suggestions .suggestion-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            padding-left: 24px;
+        }
+
+        /* ===== ПОИСК + СОРТИРОВКА ===== */
+        .search-sort-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            flex: 1 1 100%;
+            background: var(--bg-secondary);
+            padding: 10px 14px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            transition: all var(--transition);
+        }
+
+        .search-sort-bar:hover {
+            border-color: var(--border-hover);
+            box-shadow: 0 8px 30px rgba(124, 109, 240, 0.1);
+        }
+
+        .search-sort-bar .search-wrap {
+            flex: 2 1 180px;
+            position: relative;
+        }
+
+        .search-sort-bar .search-wrap input {
+            width: 100%;
+            padding: 10px 14px 10px 38px;
+            border: none;
+            border-radius: 10px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: 1px solid var(--border-color);
+            transition: all var(--transition);
+        }
+
+        .search-sort-bar .search-wrap input:focus {
+            outline: 2px solid var(--accent);
+            background: var(--bg-hover);
+            transform: scale(1.01);
+        }
+
+        .search-sort-bar .search-wrap .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .search-sort-bar .sort-group {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-sort-bar .sort-group label {
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            margin-right: 4px;
+        }
+
+        .search-sort-bar .sort-group select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .search-sort-bar .sort-group select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(124, 109, 240, 0.15);
+        }
+
+        .search-sort-bar .view-group {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .search-sort-bar .view-group button {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 18px;
+            transition: all var(--transition);
+            line-height: 1;
+        }
+
+        .search-sort-bar .view-group button.active-view {
+            background: var(--accent-gradient);
+            color: #fff;
+            border-color: var(--accent);
+            box-shadow: 0 4px 15px rgba(124, 109, 240, 0.3);
+        }
+
+        .search-sort-bar .view-group button:hover:not(.active-view) {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            transform: scale(1.05);
+        }
+
+        /* ===== ПОДСКАЗКИ ===== */
+        .feature-hints {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: var(--bg-hover);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-hints:hover { opacity: 1; }
+
+        .feature-hints .hint {
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 2px 10px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .feature-hints .hint:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        /* ===== СТАТИСТИКА ПО ТЕГАМ ===== */
+        .tag-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            align-items: center;
+            animation: slideUp 0.5s ease-out 0.3s both;
+            transition: all var(--transition);
+        }
+
+        .tag-stats:hover {
+            border-color: var(--border-hover);
+            box-shadow: 0 4px 20px rgba(124, 109, 240, 0.05);
+        }
+
+        .tag-stats .stats-label {
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            margin-right: 6px;
+        }
+
+        .tag-stats .stat-item {
+            padding: 4px 14px;
+            border-radius: 20px;
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .tag-stats .stat-item:hover {
+            background: var(--accent-gradient);
+            color: #fff;
+            border-color: var(--accent);
+            transform: scale(1.04);
+            box-shadow: 0 4px 15px rgba(124, 109, 240, 0.2);
+        }
+
+        .tag-stats .stat-item.active-stat {
+            background: var(--accent-gradient);
+            color: #fff;
+            border-color: var(--accent);
+            box-shadow: 0 4px 15px rgba(124, 109, 240, 0.2);
+        }
+
+        .tag-stats .stat-item .count {
+            background: var(--bg-primary);
+            padding: 0 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 4px;
+        }
+
+        .tag-stats .stat-item:hover .count {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ===== ГРАФИК АКТИВНОСТИ ===== */
+        .activity-graph {
+            margin-bottom: 16px;
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            animation: slideUp 0.5s ease-out 0.25s both;
+        }
+
+        .activity-graph .graph-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .activity-graph .graph-bars {
+            display: flex;
+            gap: 6px;
+            align-items: flex-end;
+            height: 60px;
+        }
+
+        .activity-graph .graph-bar {
+            flex: 1;
+            background: var(--accent-gradient);
+            border-radius: 4px 4px 0 0;
+            min-height: 4px;
+            transition: height 0.6s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .activity-graph .graph-bar:hover {
+            opacity: 0.8;
+            transform: scaleY(1.05);
+            transform-origin: bottom;
+        }
+
+        .activity-graph .graph-bar .bar-label {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .activity-graph .graph-bar .bar-value {
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        /* ===== СЕТКА ЗАМЕТОК ===== */
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .notes-grid.list-view {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .notes-grid.list-view .note {
+            min-height: 70px;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 14px 18px;
+        }
+
+        .notes-grid.list-view .note .note-text {
+            flex: 2 1 200px;
+            padding-bottom: 0;
+        }
+
+        .notes-grid.list-view .note .note-tag { margin-top: 0; }
+        .notes-grid.list-view .note .note-date { border-top: none; padding-top: 0; margin-top: 0; margin-left: auto; font-size: 11px; }
+        .notes-grid.list-view .note .note-actions { margin-top: 0; }
+        .notes-grid.list-view .note .note-checkbox { margin-right: 12px; }
+
+        /* ===== КАРТОЧКА ЗАМЕТКИ ===== */
+        .note {
+            background: #1a1a1a;
+            padding: 18px 18px 14px;
+            border-radius: 20px;
+            color: var(--text-primary);
+            position: relative;
+            word-wrap: break-word;
+            box-shadow: var(--shadow);
+            transition: all var(--transition);
+            border: 1px solid var(--border-color);
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.4s ease-out both;
+        }
+
+        .note:nth-child(1) { animation-delay: 0.05s; }
+        .note:nth-child(2) { animation-delay: 0.1s; }
+        .note:nth-child(3) { animation-delay: 0.15s; }
+        .note:nth-child(4) { animation-delay: 0.2s; }
+        .note:nth-child(5) { animation-delay: 0.25s; }
+        .note:nth-child(6) { animation-delay: 0.3s; }
+
+        .note:hover {
+            transform: translateY(-6px) scale(1.01);
+            border-color: var(--border-hover);
+            box-shadow: 0 12px 40px rgba(124, 109, 240, 0.15);
+        }
+
+        .note.pinned { border-left: 4px solid var(--warning); }
+        .note.locked { border-left: 4px solid var(--accent); }
+        .note.overdue { border-right: 4px solid var(--danger); animation: pulse 1.5s ease-in-out infinite; }
+        .note.selected { border: 2px solid var(--accent); box-shadow: 0 0 0 4px rgba(124, 109, 240, 0.15); }
+        .note.is-new { border: 2px solid var(--success); }
+
+        .note .note-checkbox {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent);
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+
+        .note:hover .note-checkbox { opacity: 1; }
+        .note .note-checkbox:checked { opacity: 1; }
+
+        .note .note-text {
+            font-size: 15px;
+            line-height: 1.6;
+            flex: 1;
+            padding-bottom: 10px;
+            padding-left: 24px;
+            color: #ffffff;
+        }
+
+        .note .note-text .checkbox {
+            cursor: pointer;
+            margin-right: 6px;
+            user-select: none;
+            transition: transform 0.3s ease;
+        }
+
+        .note .note-text .checkbox:hover { transform: scale(1.2); }
+        .note .note-text .checked { text-decoration: line-through; opacity: 0.6; }
+
+        .note .note-text .link {
+            color: var(--accent);
+            text-decoration: underline;
+            cursor: pointer;
+            word-break: break-all;
+            transition: all 0.3s ease;
+        }
+
+        .note .note-text .link:hover {
+            opacity: 0.8;
+            color: var(--accent-hover);
+        }
+
+        .note .note-text .attachment {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg-hover);
+            border-radius: 8px;
+            font-size: 12px;
+            margin: 2px 4px 2px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .note .note-text .attachment:hover {
+            border-color: var(--accent);
+            transform: scale(1.02);
+        }
+
+        .note .note-text .attachment img {
+            max-width: 80px;
+            max-height: 60px;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+
+        .note .checklist-progress {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            padding: 2px 10px;
+            background: var(--bg-hover);
+            border-radius: 10px;
+            display: inline-block;
+            align-self: flex-start;
+        }
+
+        .note .checklist-progress.done {
+            color: var(--success);
+            background: rgba(81, 207, 102, 0.15);
+        }
+
+        .note .note-tag {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-top: 4px;
+            align-self: flex-start;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .note .note-tag:hover { transform: scale(1.05); }
+
+        .note .note-reminder {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .note .note-reminder.overdue { color: var(--danger); }
+
+        .note .note-date {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
+        }
+
+        /* ===== ИКОНКИ ФУНКЦИЙ НА ЗАМЕТКАХ ===== */
+        .note .note-icons {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+
+        .note .note-icons .icon-badge {
+            font-size: 12px;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+
+        .note .note-icons .icon-badge:hover { opacity: 1; }
+
+        .note .note-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .note .note-actions button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: all var(--transition);
+        }
+
+        .note .note-actions button:hover {
+            transform: scale(1.15) translateY(-2px);
+        }
+
+        .note .note-actions .delete-btn:hover {
+            color: var(--danger);
+            background: rgba(255, 107, 107, 0.15);
+        }
+
+        .note .note-actions .edit-btn:hover {
+            color: var(--warning);
+            background: rgba(255, 217, 61, 0.15);
+        }
+
+        .note .note-actions .pin-btn:hover {
+            color: var(--warning);
+            background: rgba(255, 217, 61, 0.15);
+        }
+
+        .note .note-actions .color-btn:hover {
+            color: var(--accent);
+            background: rgba(124, 109, 240, 0.15);
+        }
+
+        .note .note-actions .reminder-btn:hover {
+            color: var(--success);
+            background: rgba(81, 207, 102, 0.15);
+        }
+
+        .note .note-actions .lock-btn:hover {
+            color: var(--warning);
+            background: rgba(255, 217, 61, 0.15);
+        }
+
+        .note .note-actions .history-btn:hover {
+            color: var(--accent);
+            background: rgba(124, 109, 240, 0.15);
+        }
+
+        .note .note-actions .restore-btn:hover {
+            color: var(--success);
+            background: rgba(81, 207, 102, 0.15);
+        }
+
+        .note .note-actions .delete-forever-btn:hover {
+            color: var(--danger);
+            background: rgba(255, 107, 107, 0.15);
+        }
+
+        /* ===== МОДАЛКИ ===== */
+        .color-modal,
+        .reminder-modal,
+        .export-modal,
+        .history-modal,
+        .attachment-modal,
+        .voice-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            animation: fadeIn 0.3s ease;
+            backdrop-filter: blur(8px);
+            padding: 20px;
+        }
+
+        .color-modal-content,
+        .reminder-modal-content,
+        .export-modal-content,
+        .history-modal-content,
+        .attachment-modal-content,
+        .voice-modal-content {
+            background: var(--bg-secondary);
+            padding: 32px;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.4s ease-out;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .history-modal-content .version-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-modal-content .version-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .history-modal-content .version-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .history-modal-content .version-item .version-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .history-modal-content .version-item .version-info .date {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .history-modal-content .version-item button {
+            padding: 4px 12px;
+            border: none;
+            border-radius: 6px;
+            background: var(--accent);
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .history-modal-content .version-item button:hover {
+            transform: scale(1.05);
+        }
+
+        .color-modal-content h3,
+        .reminder-modal-content h3,
+        .export-modal-content h3,
+        .history-modal-content h3,
+        .attachment-modal-content h3,
+        .voice-modal-content h3 {
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .color-modal-content .preset-colors {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .color-modal-content .preset-colors .color-option {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .color-modal-content .preset-colors .color-option:hover {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        .color-modal-content .preset-colors .color-option.active-color {
+            border-color: #fff;
+            box-shadow: 0 0 0 2px var(--accent), 0 4px 20px rgba(124, 109, 240, 0.3);
+            transform: scale(1.1);
+        }
+
+        .color-modal-content .custom-color-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .color-modal-content .custom-color-row label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .color-modal-content .custom-color-row input[type="color"] {
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 4px;
+            cursor: pointer;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .color-modal-content .custom-color-row input[type="color"]:hover {
+            transform: scale(1.05);
+        }
+
+        .color-modal-content .current-color-display {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: var(--bg-hover);
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .color-modal-content .current-color-display .color-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .color-modal-content .current-color-display .color-hex {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        .color-modal-content .close-btn,
+        .reminder-modal-content .close-btn,
+        .export-modal-content .close-btn,
+        .history-modal-content .close-btn,
+        .attachment-modal-content .close-btn,
+        .voice-modal-content .close-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+            transition: all var(--transition);
+            margin-top: 16px;
+        }
+
+        .color-modal-content .close-btn:hover,
+        .reminder-modal-content .close-btn:hover,
+        .export-modal-content .close-btn:hover,
+        .history-modal-content .close-btn:hover,
+        .attachment-modal-content .close-btn:hover,
+        .voice-modal-content .close-btn:hover {
+            background: var(--accent-gradient);
+            color: #fff;
+            transform: scale(1.02);
+        }
+
+        .reminder-modal-content .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .reminder-modal-content .btn-group button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all var(--transition);
+        }
+
+        .reminder-modal-content .btn-group .btn-save {
+            background: var(--accent-gradient);
+            color: #fff;
+        }
+
+        .reminder-modal-content .btn-group .btn-save:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        .reminder-modal-content .btn-group .btn-cancel {
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+        }
+
+        .reminder-modal-content .btn-group .btn-cancel:hover {
+            background: var(--border-color);
+        }
+
+        .reminder-modal-content .btn-group .btn-remove {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .reminder-modal-content .btn-group .btn-remove:hover {
+            opacity: 0.8;
+            transform: scale(1.02);
+        }
+
+        .reminder-modal-content input[type="datetime-local"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 15px;
+            margin-bottom: 16px;
+        }
+
+        .reminder-modal-content input[type="datetime-local"]:focus {
+            outline: 2px solid var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* ===== VOICE MODAL ===== */
+        .voice-modal-content .voice-status {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .voice-modal-content .voice-status .mic-icon {
+            font-size: 64px;
+            animation: pulse 1.5s ease-in-out infinite;
+            display: block;
+            margin-bottom: 16px;
+        }
+
+        .voice-modal-content .voice-status .status-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .voice-modal-content .voice-status .transcript {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--bg-hover);
+            border-radius: 12px;
+            font-size: 15px;
+            color: var(--text-primary);
+            min-height: 60px;
+        }
+
+        .voice-modal-content .voice-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .voice-modal-content .voice-controls button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .voice-modal-content .voice-controls .start-btn {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .voice-modal-content .voice-controls .start-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .voice-modal-content .voice-controls .start-btn.recording {
+            background: var(--danger);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .voice-modal-content .voice-controls .stop-btn {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .voice-modal-content .voice-controls .stop-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .voice-modal-content .voice-controls .apply-btn {
+            background: var(--accent-gradient);
+            color: #fff;
+        }
+
+        .voice-modal-content .voice-controls .apply-btn:hover {
+            transform: scale(1.02);
+        }
+
+        /* ===== ATTACHMENT MODAL ===== */
+        .attachment-modal-content .attachment-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .attachment-modal-content .attachment-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .attachment-modal-content .attachment-item .attach-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .attachment-modal-content .attachment-item .attach-info .attach-icon {
+            font-size: 24px;
+        }
+
+        .attachment-modal-content .attachment-item .attach-info .attach-name {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .attachment-modal-content .attachment-item .attach-info .attach-size {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .attachment-modal-content .attachment-item .attach-actions button {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+        }
+
+        .attachment-modal-content .attachment-item .attach-actions button:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .attachment-modal-content .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .attachment-modal-content .upload-area:hover {
+            border-color: var(--accent);
+            background: var(--bg-hover);
+        }
+
+        .attachment-modal-content .upload-area .upload-icon {
+            font-size: 40px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .attachment-modal-content .upload-area .upload-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .attachment-modal-content .upload-area input[type="file"] {
+            display: none;
+        }
+
+        /* ===== ЭКСПОРТ ===== */
+        .export-modal-content .export-options {
+            display: flex;
+            gap: 12px;
+            flex-direction: column;
+        }
+
+        .export-modal-content .export-options button {
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all var(--transition);
+            border: 1px solid var(--border-color);
+        }
+
+        .export-modal-content .export-options button:hover {
+            background: var(--accent-gradient);
+            color: #fff;
+            border-color: var(--accent);
+            transform: scale(1.02);
+        }
+
+        /* ===== ПУСТО ===== */
+        .empty-msg {
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 60px;
+            font-size: 18px;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        /* ===== ФУТЕР ===== */
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer:hover { opacity: 1; }
+        .footer span { color: var(--accent); }
+
+        /* ===== АДАПТИВ ===== */
+        @media (max-width: 600px) {
+            .welcome h1 { font-size: 36px; }
+            .welcome { margin: 30px auto; padding: 30px 20px; }
+            .greeting { font-size: 18px; padding: 10px 20px; }
+            .action-group { flex-direction: column; gap: 6px; padding: 6px; max-width: 100%; border-radius: 16px; }
+            .action-group .action-btn { padding: 14px 20px; font-size: 15px; border-radius: 12px; }
+            .action-group .action-btn .icon { font-size: 18px; }
+            .theme-selector { max-width: 100%; padding: 16px 18px; }
+            .theme-options button { padding: 6px 16px; font-size: 13px; }
+            .notes-grid { grid-template-columns: 1fr; }
+            .notes-grid.list-view .note { flex-direction: column; align-items: stretch; }
+            .notes-grid.list-view .note .note-date { margin-left: 0; }
+            .board-header h1 { font-size: 22px; }
+            .add-note .note-input { flex: 1 1 100%; }
+            .add-note-wrapper { flex: 1 1 100%; }
+            .color-modal-content .preset-colors { grid-template-columns: repeat(6, 1fr); }
+            .changelog-content { padding: 20px; }
+            .search-sort-bar { flex-direction: column; align-items: stretch; }
+            .search-sort-bar .sort-group { justify-content: space-between; }
+            .search-sort-bar .view-group { justify-content: center; }
+            .tag-stats { gap: 6px; }
+            .tag-stats .stat-item { font-size: 12px; padding: 3px 10px; }
+            .reminder-modal-content .btn-group { flex-direction: column; }
+            .shooting-star { display: none; }
+            .feature-hints .hint { font-size: 10px; white-space: normal; }
+            .dashboard-stats { grid-template-columns: repeat(3, 1fr); }
+            .bulk-actions { flex-direction: column; align-items: stretch; }
+            .bulk-actions .bulk-info { text-align: center; }
+            .activity-graph .graph-bars { height: 40px; }
+            .quick-filters { gap: 4px; }
+            .quick-filters .filter-btn { font-size: 10px; padding: 2px 10px; }
+            .instructions ul li { font-size: 13px; padding: 8px 0; }
+            .instructions ul li .emoji { font-size: 16px; min-width: 24px; }
+            .pin-box { padding: 30px 20px; }
+            .pin-box .pin-keypad button { padding: 14px; font-size: 18px; }
+            .history-modal-content { max-width: 100%; margin: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== ЗВЁЗДНЫЙ ФОН ===== -->
+    <div class="stars-container" id="starsContainer"></div>
+
+    <!-- ===== TOAST КОНТЕЙНЕР ===== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ===== PIN-КОД ОВЕРЛЕЙ ===== -->
+    <div class="pin-overlay hidden" id="pinOverlay">
+        <div class="pin-box">
+            <h2 id="pinTitle">🔐 Введите PIN-код</h2>
+            <p class="pin-status" id="pinStatus">Введите 4-значный код для доступа к доске</p>
+            <div class="pin-dots" id="pinDots">
+                <div class="dot" data-index="0"></div>
+                <div class="dot" data-index="1"></div>
+                <div class="dot" data-index="2"></div>
+                <div class="dot" data-index="3"></div>
+            </div>
+            <div class="pin-keypad">
+                <button onclick="pinInput('1')">1</button>
+                <button onclick="pinInput('2')">2</button>
+                <button onclick="pinInput('3')">3</button>
+                <button onclick="pinInput('4')">4</button>
+                <button onclick="pinInput('5')">5</button>
+                <button onclick="pinInput('6')">6</button>
+                <button onclick="pinInput('7')">7</button>
+                <button onclick="pinInput('8')">8</button>
+                <button onclick="pinInput('9')">9</button>
+                <button class="clear-btn" onclick="pinClear()">⌫</button>
+                <button onclick="pinInput('0')">0</button>
+                <button class="clear-btn" onclick="pinClearAll()">✕</button>
+            </div>
+            <div class="pin-actions">
+                <button class="unlock-btn" onclick="pinUnlock()">🔓 Разблокировать</button>
+                <button class="cancel-btn" onclick="pinCancel()">✕ Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app" id="app">
+        <!-- ===== ГЛАВНАЯ ===== -->
+        <div class="page active" id="welcomePage">
+            <div class="welcome">
+                <h1>📌 Доска заметок</h1>
+                <div class="subtitle">Минималистично. Удобно. Твоё.</div>
+                <div class="version-badge">v1.5.0</div>
+                <div class="greeting" id="greeting"></div>
+
+                <!-- ===== СТАТИСТИКА НА ГЛАВНОЙ ===== -->
+                <div class="dashboard-stats" id="dashboardStats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="dashTotal">0</div>
+                        <div class="stat-label">📝 Всего заметок</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="dashTags">0</div>
+                        <div class="stat-label">🏷️ Всего тегов</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="dashProgress">0%</div>
+                        <div class="stat-label">✅ Выполнено</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="dashReminders">0</div>
+                        <div class="stat-label">⏰ Напоминаний</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="dashToday">0</div>
+                        <div class="stat-label">📅 За сегодня</div>
+                    </div>
+                </div>
+
+                <div class="action-group">
+                    <button class="action-btn primary" onclick="goToBoard()">
+                        <span class="icon">🚀</span> Начать работу
+                    </button>
+                    <button class="action-btn" onclick="showInstructions()">
+                        <span class="icon">📖</span> Инструкция
+                    </button>
+                    <button class="action-btn" onclick="showChangelog()">
+                        <span class="icon">📜</span> История
+                    </button>
+                    <button class="action-btn" onclick="togglePinSetup()">
+                        <span class="icon" id="pinIcon">🔐</span> <span id="pinLabel">Установить PIN</span>
+                    </button>
+                </div>
+                <div class="theme-selector">
+                    <label>🌓 Выбор темы</label>
+                    <div class="theme-options">
+                        <button class="active-theme" data-theme="auto" onclick="setTheme('auto')">🔄 Авто</button>
+                        <button data-theme="dark" onclick="setTheme('dark')">🌙 Тёмная</button>
+                        <button data-theme="light" onclick="setTheme('light')">☀️ Светлая</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ИНСТРУКЦИЯ ===== -->
+        <div class="page" id="instructionsPage">
+            <div class="instructions">
+                <h2>📖 Как пользоваться доской</h2>
+                <ul>
+                    <li><span class="emoji">➕</span> Введите текст, выберите тег и нажмите «Добавить»</li>
+                    <li><span class="emoji">☑️</span> Кликните по чек-боксу в заметке — чтобы отметить выполненное</li>
+                    <li><span class="emoji">⏰</span> Нажмите ⏰ у заметки — установите напоминание</li>
+                    <li><span class="emoji">🔗</span> Вставьте ссылку — она станет кликабельной автоматически</li>
+                    <li><span class="emoji">🏷️</span> Каждый тег получает свой цвет автоматически</li>
+                    <li><span class="emoji">🎨</span> Нажмите 🎨 у заметки — выберите цвет для карточки</li>
+                    <li><span class="emoji">📌</span> Нажмите 📌 у заметки — закрепите её сверху</li>
+                    <li><span class="emoji">🔒</span> Нажмите 🔒 у заметки — защитите её PIN-кодом</li>
+                    <li><span class="emoji">📎</span> Добавляйте вложения к заметкам (изображения, файлы)</li>
+                    <li><span class="emoji">🎙️</span> Используйте голосовые заметки — диктуйте текст</li>
+                    <li><span class="emoji">🔄</span> История версий — откат к любой предыдущей версии</li>
+                    <li><span class="emoji">📈</span> Кликните по тегу в статистике — отфильтруйте заметки</li>
+                    <li><span class="emoji">🔍</span> Начните вводить текст в поиске — заметки отфильтруются мгновенно</li>
+                    <li><span class="emoji">📊</span> Выберите сортировку в выпадающем списке</li>
+                    <li><span class="emoji">🖼️</span> Переключайте режимы: плитка ▦ или список ☰</li>
+                    <li><span class="emoji">🎯</span> Выделите несколько заметок — используйте групповые действия</li>
+                    <li><span class="emoji">🗑️</span> Удалённые заметки попадают в корзину — их можно восстановить</li>
+                    <li><span class="emoji">⌨️</span> ESC — закрыть модалки, ENTER — добавить заметку</li>
+                    <li><span class="emoji">⌨️</span> Ctrl+A — выделить все заметки, Ctrl+D — удалить выделенные</li>
+                </ul>
+                <button class="back-btn" onclick="showWelcome()">← Назад на главную</button>
+            </div>
+        </div>
+
+        <!-- ===== ДОСКА ===== -->
+        <div class="page" id="boardPage">
+            <div class="board-header">
+                <h1>📌 Доска заметок <span style="font-size:14px;color:var(--text-muted);font-weight:400;background:none;-webkit-text-fill-color:var(--text-muted);">v1.5.0</span></h1>
+                <div class="header-actions">
+                    <button class="back-home" onclick="showWelcome()">🏠 Главная</button>
+                    <button onclick="showExportModal()">📤 Экспорт</button>
+                    <button onclick="document.getElementById('importFile').click()">📥 Импорт</button>
+                    <button class="trash-btn" onclick="showTrash()">
+                        🗑️ Корзина <span class="badge" id="trashCount">0</span>
+                    </button>
+                    <button class="lock-btn" onclick="lockBoard()">🔒 Заблокировать</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(this.files[0])" />
+                </div>
+            </div>
+
+            <div class="stats">📝 Всего: <span id="count">0</span></div>
+
+            <!-- ===== БЫСТРЫЕ ФИЛЬТРЫ ===== -->
+            <div class="quick-filters">
+                <span class="filter-label">🎯 Фильтры:</span>
+                <button class="filter-btn active" data-filter="all" onclick="setQuickFilter('all')">Все</button>
+                <button class="filter-btn" data-filter="pinned" onclick="setQuickFilter('pinned')">📌 Закреплённые</button>
+                <button class="filter-btn" data-filter="reminder" onclick="setQuickFilter('reminder')">⏰ С напоминанием</button>
+                <button class="filter-btn" data-filter="checklist" onclick="setQuickFilter('checklist')">✅ С чек-листом</button>
+                <button class="filter-btn" data-filter="today" onclick="setQuickFilter('today')">📅 За сегодня</button>
+                <button class="filter-btn" data-filter="locked" onclick="setQuickFilter('locked')">🔒 Защищённые</button>
+            </div>
+
+            <!-- ===== ГРУППОВЫЕ ОПЕРАЦИИ ===== -->
+            <div class="bulk-actions" id="bulkActions">
+                <span class="bulk-info">📌 Выбрано: <span id="selectedCount">0</span></span>
+                <button onclick="bulkPin()">📌 Закрепить</button>
+                <button onclick="bulkUnpin()">📌 Открепить</button>
+                <button onclick="bulkDelete()" class="danger">🗑️ Удалить</button>
+                <select id="bulkTagSelect" onchange="bulkTag()">
+                    <option value="">🏷️ Сменить тег...</option>
+                </select>
+                <button onclick="bulkColor()">🎨 Сменить цвет</button>
+                <button onclick="clearSelection()">✕ Снять выделение</button>
+            </div>
+
+            <!-- ===== ГРАФИК АКТИВНОСТИ ===== -->
+            <div class="activity-graph" id="activityGraph">
+                <div class="graph-title">📊 Активность за 7 дней</div>
+                <div class="graph-bars" id="graphBars"></div>
+            </div>
+
+            <!-- ===== ТУЛБАР ===== -->
+            <div class="toolbar">
+                <div class="add-note">
+                    <input type="text" class="note-input" id="noteInput" placeholder="Введите заметку..." />
+                    <div class="add-note-wrapper">
+                        <input type="text" class="tag-input" id="tagInput" placeholder="Тег" autocomplete="off" />
+                        <div class="tag-suggestions" id="tagSuggestions"></div>
+                    </div>
+                    <button class="add-btn" onclick="addNote()">➕ Добавить</button>
+                    <button class="template-btn" onclick="showVoiceModal()">🎙️ Голос</button>
+                    <div class="template-dropdown">
+                        <button class="template-btn" onclick="toggleTemplates()">📋 Шаблоны ▾</button>
+                        <div class="template-dropdown-content" id="templateDropdown">
+                            <div class="template-item" onclick="applyTemplate('📝 Список дел:\n- [ ] Задача 1\n- [ ] Задача 2\n- [ ] Задача 3')">📝 Список дел</div>
+                            <div class="template-item" onclick="applyTemplate('💡 Идея:\n\nОписание идеи...')">💡 Идея</div>
+                            <div class="template-item" onclick="applyTemplate('📚 Заметка:\n\nТекст заметки...')">📚 Заметка</div>
+                            <div class="template-item" onclick="applyTemplate('✅ Чек-лист:\n- [ ] Пункт 1\n- [ ] Пункт 2\n- [ ] Пункт 3')">✅ Чек-лист</div>
+                            <div class="template-item" onclick="applyTemplate('📅 План на день:\n1. Утро\n2. День\n3. Вечер')">📅 План на день</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="search-sort-bar">
+                    <div class="search-wrap">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="searchInput" placeholder="Поиск по заметкам..." oninput="render()" />
+                    </div>
+                    <div class="sort-group">
+                        <label>📊</label>
+                        <select id="sortSelect" onchange="render()">
+                            <option value="date-desc">По дате (новые)</option>
+                            <option value="date-asc">По дате (старые)</option>
+                            <option value="alpha-asc">По алфавиту (А→Я)</option>
+                            <option value="alpha-desc">По алфавиту (Я→А)</option>
+                            <option value="color">По цвету</option>
+                            <option value="reminder">По напоминанию</option>
+                        </select>
+                    </div>
+                    <div class="view-group">
+                        <button class="active-view" data-view="grid" onclick="setView('grid')" title="Плитка">▦</button>
+                        <button data-view="list" onclick="setView('list')" title="Список">☰</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== ПОДСКАЗКИ ===== -->
+            <div class="feature-hints">
+                <span class="hint">✅ Чек-листы: используйте "- [ ] задача"</span>
+                <span class="hint">⏰ Напоминания: нажмите ⏰ у заметки</span>
+                <span class="hint">📌 Закрепление: нажмите 📌 у заметки</span>
+                <span class="hint">🎨 Цвета: нажмите 🎨 для выбора цвета</span>
+                <span class="hint">🔗 Ссылки: вставьте URL — автоматически кликабельно</span>
+                <span class="hint">🎯 Выделите заметки для групповых операций</span>
+                <span class="hint">🎙️ Голосовые заметки: нажмите 🎙️ Голос</span>
+                <span class="hint">📎 Вложения: добавляйте файлы к заметкам</span>
+            </div>
+
+            <!-- ===== СТАТИСТИКА ПО ТЕГАМ ===== -->
+            <div class="tag-stats" id="tagStats"></div>
+
+            <!-- ===== СЕТКА ЗАМЕТОК ===== -->
+            <div class="notes-grid" id="notesContainer"></div>
+
+            <div class="footer">
+                <span>✦</span> Мини-доска заметок <span>v1.5.0</span> &mdash; сохраняется в браузере <span>✦</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        //  v1.5.0 — МЕГА-ОБНОВЛЕНИЕ
+        //  🔐 PIN-код: первый раз без пароля, пользователь сам устанавливает
+        //  📎 Вложения, 🎙️ Голосовые заметки, 🔄 История версий
+        //  🌐 Синхронизация, 🎨 Кастомизация, 📊 Расширенная статистика
+        // ================================================================
+
+        const VERSION = '1.5.0';
+        let notes = [];
+        let trash = [];
+        let currentFilter = '';
+        let currentTheme = 'auto';
+        let showTrashMode = false;
+        let currentView = 'grid';
+        let currentColorNoteId = null;
+        let currentReminderNoteId = null;
+        let quickFilter = 'all';
+        let selectedNotes = new Set();
+        let pinCode = null;
+        let isLocked = false;
+        let pinAttempt = '';
+        let noteHistory = {};
+        let isRecording = false;
+        let recognition = null;
+        let voiceTranscript = '';
+        let currentNoteId = null;
+
+        const PRESET_COLORS = [
+            '#ffffff', '#f8f9fa', '#e9ecef', '#dee2e6',
+            '#ffc9c9', '#ffd8a8', '#ffec99', '#b2f2bb',
+            '#99e9f2', '#a5d8ff', '#d0bfff', '#eebefa',
+            '#ff6b6b', '#fcc419', '#51cf66', '#339af0',
+        ];
+
+        const TAG_COLORS = [
+            '#ff6b6b', '#ffd93d', '#51cf66', '#339af0',
+            '#cc5de8', '#fd7e14', '#20c997', '#e83e8c',
+            '#6c5ce7', '#00b894', '#fdcb6e', '#e17055',
+            '#0984e3', '#6c5ce7', '#00cec9', '#fd79a8'
+        ];
+
+        // ===== CHANGELOG =====
+        const CHANGELOG = [{
+            version: '1.5.0',
+            date: '06.07.2026',
+            current: true,
+            changes: [
+                '🔐 PIN-код: устанавливается по желанию, первый раз без пароля',
+                '🔒 Защита отдельных заметок PIN-кодом',
+                '📎 Вложения (изображения и файлы) к заметкам',
+                '🎙️ Голосовые заметки с распознаванием речи',
+                '🌐 Синхронизация и резервное копирование',
+                '🎨 Кастомизация цветовых схем',
+                '📊 Расширенная статистика и аналитика',
+                '🔄 История версий заметок с откатом',
+                '🏷️ Умные теги с автоматической группировкой'
+            ]
+        }, {
+            version: '1.4.0',
+            date: '27.06.2026',
+            current: false,
+            changes: [
+                '🎯 Групповые операции — выделяйте заметки для массовых действий',
+                '📊 График активности за 7 дней',
+                '🎯 Быстрые фильтры: закреплённые, с напоминанием, с чек-листом, за сегодня',
+                '✨ Эффект "Новое" для заметок младше 5 минут',
+                '🏷️ Иконки функций на заметках (📋⏰🔗📌🆕)',
+                '📈 Статистика на главной странице',
+                '💬 Toast-уведомления',
+                '🔄 Плавные анимации и улучшенный UX'
+            ]
+        }, {
+            version: '1.3.0',
+            date: '24.06.2026',
+            current: false,
+            changes: [
+                '✨ Улучшенный дизайн с анимациями и эффектами',
+                '🌟 Улучшенный звёздный фон с падающими звёздами',
+                '🎨 Градиентные заголовки и кнопки',
+                '💎 Эффект стекла (Glassmorphism) на главной',
+                '🔄 Плавные анимации при наведении и переходах',
+                '📱 Адаптивные улучшения для мобильных устройств',
+                '🎯 Микро-анимации кнопок и элементов',
+                '🐛 Исправлены все ошибки: чек-листы, статистика, напоминания'
+            ]
+        }, {
+            version: '1.2.0',
+            date: '24.06.2026',
+            current: false,
+            changes: [
+                '✅ Чек-листы — отмечайте выполненные пункты',
+                '📅 Напоминания — устанавливайте дату и время',
+                '🔗 Ссылки — автоматическое распознавание URL',
+                '🏷️ Цветные теги — каждый тег со своим цветом',
+                '✨ Звёздный фон на главной странице',
+                '🔍 Мгновенный поиск по тексту заметок',
+                '📊 Сортировка: по дате, алфавиту, цвету, напоминанию'
+            ]
+        }, {
+            version: '1.1.0',
+            date: '22.06.2026',
+            current: false,
+            changes: [
+                '🎨 Полная палитра цветов + кастомный',
+                '🏷️ Свои теги + автодополнение',
+                '📌 Закрепление заметок',
+                '🌓 Автоматическая смена темы',
+                '🗑️ Корзина с восстановлением',
+                '🌅 Приветствие по времени суток'
+            ]
+        }, {
+            version: '1.0.0',
+            date: '21.06.2026',
+            current: false,
+            changes: [
+                '✅ Создание/удаление/редактирование',
+                '✅ Автосохранение в localStorage',
+                '✅ Экспорт/импорт JSON',
+                '✅ Адаптивный дизайн'
+            ]
+        }];
+
+        // ===== DOM =====
+        const container = document.getElementById('notesContainer');
+        const noteInput = document.getElementById('noteInput');
+        const tagInput = document.getElementById('tagInput');
+        const statsSpan = document.getElementById('count');
+        const tagStatsEl = document.getElementById('tagStats');
+        const tagSuggestions = document.getElementById('tagSuggestions');
+        const trashCountSpan = document.getElementById('trashCount');
+        const searchInput = document.getElementById('searchInput');
+        const sortSelect = document.getElementById('sortSelect');
+        const starsContainer = document.getElementById('starsContainer');
+        const bulkActions = document.getElementById('bulkActions');
+        const selectedCountSpan = document.getElementById('selectedCount');
+        const bulkTagSelect = document.getElementById('bulkTagSelect');
+        const toastContainer = document.getElementById('toastContainer');
+        const pinOverlay = document.getElementById('pinOverlay');
+        const pinIcon = document.getElementById('pinIcon');
+        const pinLabel = document.getElementById('pinLabel');
+
+        // ================================================================
+        //  PIN-КОД (НОВАЯ ЛОГИКА)
+        // ================================================================
+
+        // Загружаем PIN, если он есть
+        function loadPin() {
+            const saved = localStorage.getItem('mini_notes_pin');
+            if (saved) {
+                pinCode = saved;
+                isLocked = true;
+                pinIcon.textContent = '🔐';
+                pinLabel.textContent = 'Сменить PIN';
+            } else {
+                pinCode = null;
+                isLocked = false;
+                pinIcon.textContent = '🔐';
+                pinLabel.textContent = 'Установить PIN';
+            }
+        }
+
+        function savePin() {
+            if (pinCode) {
+                localStorage.setItem('mini_notes_pin', pinCode);
+            } else {
+                localStorage.removeItem('mini_notes_pin');
+            }
+        }
+
+        function updatePinUI() {
+            if (pinCode) {
+                pinIcon.textContent = '🔐';
+                pinLabel.textContent = 'Сменить PIN';
+            } else {
+                pinIcon.textContent = '🔐';
+                pinLabel.textContent = 'Установить PIN';
+            }
+        }
+
+        // Установить новый PIN
+        function setupPin() {
+            const newPin = prompt(
+                '🔐 Установите PIN-код для защиты доски (4 цифры):\n\n' +
+                '• Введите 4 цифры\n' +
+                '• Оставьте пустым чтобы отключить защиту',
+                ''
+            );
+            if (newPin === null) return; // отмена
+            
+            if (newPin === '') {
+                // Отключаем PIN
+                pinCode = null;
+                isLocked = false;
+                savePin();
+                pinOverlay.classList.add('hidden');
+                updatePinUI();
+                showToast('🔓 Защита отключена', 'info');
+                return;
+            }
+            
+            if (/^\d{4}$/.test(newPin)) {
+                pinCode = newPin;
+                isLocked = true;
+                savePin();
+                updatePinUI();
+                showToast('✅ PIN-код установлен! Доска защищена.', 'success');
+                // Если доска открыта — блокируем
+                if (document.getElementById('boardPage').classList.contains('active')) {
+                    lockBoard();
+                }
+            } else {
+                showToast('❌ PIN должен быть 4 цифры', 'error');
+                setTimeout(setupPin, 300);
+            }
+        }
+
+        // Переключение PIN (установить/сменить/отключить)
+        function togglePinSetup() {
+            if (pinCode) {
+                // Если PIN уже есть — предложить сменить или отключить
+                const action = confirm(
+                    '🔐 Текущий PIN установлен.\n\n' +
+                    'Нажмите OK чтобы сменить PIN\n' +
+                    'Нажмите Отмена чтобы отключить защиту'
+                );
+                if (action) {
+                    setupPin();
+                } else {
+                    if (confirm('Вы уверены, что хотите отключить защиту?')) {
+                        pinCode = null;
+                        isLocked = false;
+                        savePin();
+                        pinOverlay.classList.add('hidden');
+                        updatePinUI();
+                        showToast('🔓 Защита отключена', 'info');
+                    }
+                }
+            } else {
+                setupPin();
+            }
+        }
+
+        // Заблокировать доску
+        function lockBoard() {
+            if (!pinCode) {
+                showToast('ℹ️ Сначала установите PIN-код (кнопка на главной)', 'info');
+                return;
+            }
+            isLocked = true;
+            pinAttempt = '';
+            updatePinDots();
+            pinOverlay.classList.remove('hidden');
+            document.getElementById('pinTitle').textContent = '🔐 Введите PIN-код';
+            document.getElementById('pinStatus').textContent = 'Введите 4-значный код для доступа к доске';
+            showToast('🔒 Доска заблокирована', 'info');
+        }
+
+        // Ввод PIN
+        function pinInput(num) {
+            if (pinAttempt.length < 4) {
+                pinAttempt += num;
+                updatePinDots();
+            }
+        }
+
+        function pinClear() {
+            pinAttempt = pinAttempt.slice(0, -1);
+            updatePinDots();
+        }
+
+        function pinClearAll() {
+            pinAttempt = '';
+            updatePinDots();
+        }
+
+        function updatePinDots() {
+            const dots = document.querySelectorAll('.pin-dots .dot');
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('filled', i < pinAttempt.length);
+                dot.classList.remove('error');
+            });
+        }
+
+        function pinUnlock() {
+            if (pinAttempt === pinCode) {
+                isLocked = false;
+                pinOverlay.classList.add('hidden');
+                pinAttempt = '';
+                updatePinDots();
+                showToast('🔓 Доска разблокирована', 'success');
+                // Обновляем доску
+                loadNotes();
+                loadTrash();
+                render();
+                updateTrashCount();
+                renderActivityGraph();
+            } else {
+                const dots = document.querySelectorAll('.pin-dots .dot');
+                dots.forEach(dot => dot.classList.add('error'));
+                pinAttempt = '';
+                setTimeout(() => {
+                    dots.forEach(dot => dot.classList.remove('error'));
+                    updatePinDots();
+                }, 400);
+                showToast('❌ Неверный PIN-код', 'error');
+            }
+        }
+
+        function pinCancel() {
+            if (document.getElementById('boardPage').classList.contains('active')) {
+                showToast('ℹ️ Для работы с доской нужен PIN-код', 'info');
+            } else {
+                pinOverlay.classList.add('hidden');
+                showWelcome();
+            }
+        }
+
+        // ================================================================
+        //  TOAST УВЕДОМЛЕНИЯ
+        // ================================================================
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+            toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span> ${message}`;
+            toastContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('hide');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ================================================================
+        //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+        // ================================================================
+
+        function getCountText(count) {
+            if (count === 0) return '0 заметок';
+            if (count === 1) return '1 заметка';
+            if (count >= 2 && count <= 4) return count + ' заметки';
+            return count + ' заметок';
+        }
+
+        function renderLinks(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(urlRegex, function(url) {
+                return `<a href="${url}" target="_blank" class="link" rel="noopener noreferrer">${url}</a>`;
+            });
+        }
+
+        function renderAttachments(attachments) {
+            if (!attachments || attachments.length === 0) return '';
+            return attachments.map(att => {
+                const isImage = att.type && att.type.startsWith('image/');
+                return `
+                    <div class="attachment" onclick="downloadAttachment('${att.id}')">
+                        ${isImage ? `<img src="${att.data}" alt="${att.name}" />` : '📎'}
+                        <span>${att.name}</span>
+                        <span style="font-size:10px;color:var(--text-muted);">(${Math.round(att.size/1024)}KB)</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'только что';
+            try {
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return 'только что';
+                const now = new Date();
+                const diff = Math.floor((now - date) / 1000);
+                
+                if (diff < 60) return 'только что';
+                if (diff < 3600) return Math.floor(diff / 60) + ' мин назад';
+                if (diff < 86400) return Math.floor(diff / 3600) + ' ч назад';
+                if (diff < 172800) return 'вчера';
+                
+                return date.toLocaleDateString('ru-RU', { 
+                    day: 'numeric', 
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch {
+                return 'только что';
+            }
+        }
+
+        function isNewNote(dateStr) {
+            if (!dateStr) return false;
+            try {
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return false;
+                const diff = (new Date() - date) / 1000;
+                return diff < 300;
+            } catch {
+                return false;
+            }
+        }
+
+        function hasLink(text) {
+            return /(https?:\/\/[^\s]+)/g.test(text);
+        }
+
+        function getDateKey(date) {
+            const d = new Date(date);
+            return d.toISOString().slice(0, 10);
+        }
+
+        // ================================================================
+        //  ИСТОРИЯ ВЕРСИЙ
+        // ================================================================
+        function saveVersion(note) {
+            if (!noteHistory[note.id]) {
+                noteHistory[note.id] = [];
+            }
+            noteHistory[note.id].push({
+                text: note.text,
+                date: new Date().toISOString(),
+                checklist: JSON.parse(JSON.stringify(note.checklist || []))
+            });
+            if (noteHistory[note.id].length > 20) {
+                noteHistory[note.id].shift();
+            }
+            localStorage.setItem('mini_notes_history', JSON.stringify(noteHistory));
+        }
+
+        function loadHistory() {
+            const saved = localStorage.getItem('mini_notes_history');
+            if (saved) {
+                try { noteHistory = JSON.parse(saved); } catch { noteHistory = {}; }
+            }
+        }
+
+        function showHistory(noteId) {
+            const note = notes.find(n => n.id === noteId);
+            if (!note) return;
+            const history = noteHistory[noteId] || [];
+            if (history.length === 0) {
+                showToast('📜 Нет сохранённых версий', 'info');
+                return;
+            }
+
+            const modal = document.createElement('div');
+            modal.className = 'history-modal';
+            modal.innerHTML = `
+                <div class="history-modal-content">
+                    <h3>📜 История версий</h3>
+                    <div class="version-list">
+                        ${history.slice().reverse().map((v, i) => `
+                            <div class="version-item">
+                                <div class="version-info">
+                                    <div>Версия ${history.length - i}</div>
+                                    <div class="date">${formatDate(v.date)}</div>
+                                    <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${v.text.substring(0, 60)}${v.text.length > 60 ? '...' : ''}</div>
+                                </div>
+                                <button onclick="restoreVersion(${noteId}, ${history.length - 1 - i})">↩️ Восстановить</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="close-btn" onclick="this.closest('.history-modal').remove()">✕ Закрыть</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', function(e) { if (e.target === this) this.remove(); });
+        }
+
+        function restoreVersion(noteId, versionIndex) {
+            const note = notes.find(n => n.id === noteId);
+            if (!note) return;
+            const history = noteHistory[noteId] || [];
+            if (!history[versionIndex]) return;
+            
+            const version = history[versionIndex];
+            if (!confirm(`Восстановить версию от ${formatDate(version.date)}?`)) return;
+            
+            note.text = version.text;
+            note.checklist = version.checklist || [];
+            note.date = new Date().toISOString();
+            saveNotes();
+            render();
+            document.querySelector('.history-modal')?.remove();
+            showToast('↩️ Версия восстановлена', 'success');
+        }
+
+        // ================================================================
+        //  ВЛОЖЕНИЯ
+        // ================================================================
+        function showAttachmentModal(noteId) {
+            const note = notes.find(n => n.id === noteId);
+            if (!note) return;
+            currentNoteId = noteId;
+            const attachments = note.attachments || [];
+
+            const modal = document.createElement('div');
+            modal.className = 'attachment-modal';
+            modal.innerHTML = `
+                <div class="attachment-modal-content">
+                    <h3>📎 Вложения</h3>
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                        <span class="upload-icon">📤</span>
+                        <div class="upload-text">Нажмите или перетащите файлы для загрузки</div>
+                        <input type="file" id="fileInput" multiple onchange="handleFileUpload(event)" />
+                    </div>
+                    <div class="attachment-list">
+                        ${attachments.length === 0 ? '<div style="text-align:center;color:var(--text-muted);padding:20px;">Нет вложений</div>' : ''}
+                        ${attachments.map(att => `
+                            <div class="attachment-item">
+                                <div class="attach-info">
+                                    <span class="attach-icon">${att.type && att.type.startsWith('image/') ? '🖼️' : '📎'}</span>
+                                    <div>
+                                        <div class="attach-name">${att.name}</div>
+                                        <div class="attach-size">${Math.round(att.size/1024)} KB</div>
+                                    </div>
+                                </div>
+                                <div class="attach-actions">
+                                    <button onclick="downloadAttachment('${att.id}')">📥</button>
+                                    <button onclick="deleteAttachment(${noteId}, '${att.id}')">🗑️</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="close-btn" onclick="this.closest('.attachment-modal').remove()">✕ Закрыть</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', function(e) { if (e.target === this) this.remove(); });
+        }
+
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            const note = notes.find(n => n.id === currentNoteId);
+            if (!note) return;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (!note.attachments) note.attachments = [];
+                    note.attachments.push({
+                        id: Date.now() + Math.random() + '',
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        data: e.target.result
+                    });
+                    saveNotes();
+                    render();
+                    showToast(`📎 ${file.name} добавлен`, 'success');
+                };
+                reader.readAsDataURL(file);
+            });
+            document.getElementById('fileInput').value = '';
+            document.querySelector('.attachment-modal')?.remove();
+            setTimeout(() => showAttachmentModal(currentNoteId), 300);
+        }
+
+        function downloadAttachment(attachmentId) {
+            const note = notes.find(n => n.attachments && n.attachments.some(a => a.id === attachmentId));
+            if (!note) return;
+            const att = note.attachments.find(a => a.id === attachmentId);
+            if (!att) return;
+
+            const link = document.createElement('a');
+            link.href = att.data;
+            link.download = att.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function deleteAttachment(noteId, attachmentId) {
+            const note = notes.find(n => n.id === noteId);
+            if (!note) return;
+            note.attachments = note.attachments.filter(a => a.id !== attachmentId);
+            saveNotes();
+            render();
+            document.querySelector('.attachment-modal')?.remove();
+            setTimeout(() => showAttachmentModal(noteId), 300);
+            showToast('🗑️ Вложение удалено', 'info');
+        }
+
+        // ================================================================
+        //  ГОЛОСОВЫЕ ЗАМЕТКИ
+        // ================================================================
+        function showVoiceModal() {
+            const modal = document.createElement('div');
+            modal.className = 'voice-modal';
+            modal.innerHTML = `
+                <div class="voice-modal-content">
+                    <h3>🎙️ Голосовая заметка</h3>
+                    <div class="voice-status">
+                        <span class="mic-icon" id="micIcon">🎤</span>
+                        <div class="status-text" id="voiceStatus">Нажмите "Начать запись"</div>
+                        <div class="transcript" id="voiceTranscript">Здесь появится распознанный текст...</div>
+                    </div>
+                    <div class="voice-controls">
+                        <button class="start-btn" id="voiceStartBtn" onclick="startRecording()">🎙️ Начать запись</button>
+                        <button class="stop-btn" id="voiceStopBtn" onclick="stopRecording()" style="display:none;">⏹️ Остановить</button>
+                        <button class="apply-btn" onclick="applyVoiceTranscript()">✅ Применить</button>
+                    </div>
+                    <button class="close-btn" onclick="this.closest('.voice-modal').remove(); stopRecording();">✕ Закрыть</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', function(e) { if (e.target === this) { this.remove(); stopRecording(); } });
+        }
+
+        function startRecording() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                showToast('❌ Ваш браузер не поддерживает распознавание речи', 'error');
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ru-RU';
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onresult = function(event) {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        transcript += event.results[i][0].transcript;
+                    }
+                }
+                if (transcript) {
+                    voiceTranscript += transcript + ' ';
+                    document.getElementById('voiceTranscript').textContent = voiceTranscript;
+                }
+            };
+
+            recognition.onend = function() {
+                if (isRecording) {
+                    recognition.start();
+                }
+            };
+
+            recognition.start();
+            isRecording = true;
+            voiceTranscript = '';
+            document.getElementById('voiceTranscript').textContent = '🎙️ Слушаю...';
+            document.getElementById('voiceStatus').textContent = '🔴 Идёт запись... Говорите';
+            document.getElementById('micIcon').textContent = '🔴';
+            document.getElementById('voiceStartBtn').style.display = 'none';
+            document.getElementById('voiceStopBtn').style.display = 'block';
+            document.getElementById('voiceStartBtn').classList.add('recording');
+            showToast('🎙️ Запись начата', 'info');
+        }
+
+        function stopRecording() {
+            if (recognition) {
+                recognition.stop();
+                isRecording = false;
+            }
+            document.getElementById('micIcon').textContent = '🎤';
+            document.getElementById('voiceStatus').textContent = '⏹️ Запись остановлена';
+            document.getElementById('voiceStartBtn').style.display = 'block';
+            document.getElementById('voiceStopBtn').style.display = 'none';
+            document.getElementById('voiceStartBtn').classList.remove('recording');
+            showToast('⏹️ Запись остановлена', 'info');
+        }
+
+        function applyVoiceTranscript() {
+            const transcript = document.getElementById('voiceTranscript').textContent;
+            if (transcript && transcript !== 'Здесь появится распознанный текст...' && transcript !== '🎙️ Слушаю...') {
+                noteInput.value = transcript;
+                document.querySelector('.voice-modal')?.remove();
+                stopRecording();
+                showToast('✅ Текст применён к заметке', 'success');
+                noteInput.focus();
+            } else {
+                showToast('❌ Нет распознанного текста', 'error');
+            }
+        }
+
+        // ================================================================
+        //  ЗВЁЗДНЫЙ ФОН
+        // ================================================================
+        function createStars() {
+            const count = 250;
+            const shootingCount = 4;
+            starsContainer.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const star = document.createElement('div');
+                const size = Math.random();
+                let className = 'star';
+                if (size < 0.33) className += ' small';
+                else if (size < 0.66) className += ' medium';
+                else className += ' large';
+
+                if (Math.random() > 0.7) className += ' floating';
+
+                star.className = className;
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.setProperty('--opacity', Math.random() * 0.8 + 0.2);
+                star.style.setProperty('--duration', (Math.random() * 4 + 2) + 's');
+                star.style.animationDelay = (Math.random() * 6) + 's';
+                starsContainer.appendChild(star);
+            }
+
+            for (let i = 0; i < shootingCount; i++) {
+                const shootingStar = document.createElement('div');
+                shootingStar.className = 'shooting-star';
+                shootingStar.style.left = (5 + Math.random() * 90) + '%';
+                shootingStar.style.top = (3 + Math.random() * 30) + '%';
+                shootingStar.style.setProperty('--duration', (6 + Math.random() * 14) + 's');
+                shootingStar.style.animationDelay = (Math.random() * 25) + 's';
+                starsContainer.appendChild(shootingStar);
+            }
+        }
+
+        function toggleStars(show) {
+            if (show) {
+                starsContainer.classList.remove('hidden');
+            } else {
+                starsContainer.classList.add('hidden');
+            }
+        }
+
+        function updateStarsColor() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const starColor = isDark ? '#ffffff' : '#1a1a2e';
+            const starShadow = isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(26, 26, 46, 0.15)';
+            
+            document.querySelectorAll('.star, .shooting-star').forEach(el => {
+                el.style.setProperty('--star-color', starColor);
+                el.style.setProperty('--star-shadow', starShadow);
+            });
+        }
+
+        // ================================================================
+        //  СТАТИСТИКА НА ГЛАВНОЙ
+        // ================================================================
+        function updateDashboardStats() {
+            const total = notes.length;
+            const tags = new Set(notes.map(n => n.tag).filter(t => t && t.trim()));
+            let totalChecklist = 0;
+            let doneChecklist = 0;
+            let reminders = 0;
+            let today = 0;
+            let locked = 0;
+            const todayStr = new Date().toISOString().slice(0, 10);
+
+            notes.forEach(n => {
+                if (n.checklist && n.checklist.length > 0) {
+                    totalChecklist += n.checklist.length;
+                    doneChecklist += n.checklist.filter(c => c.checked).length;
+                }
+                if (n.reminder) reminders++;
+                if (n.date && getDateKey(n.date) === todayStr) today++;
+                if (n.locked) locked++;
+            });
+
+            document.getElementById('dashTotal').textContent = total;
+            document.getElementById('dashTags').textContent = tags.size;
+            document.getElementById('dashProgress').textContent = totalChecklist > 0 ? 
+                Math.round((doneChecklist / totalChecklist) * 100) + '%' : '0%';
+            document.getElementById('dashReminders').textContent = reminders;
+            document.getElementById('dashToday').textContent = today;
+        }
+
+        // ================================================================
+        //  ГРАФИК АКТИВНОСТИ
+        // ================================================================
+        function renderActivityGraph() {
+            const bars = document.getElementById('graphBars');
+            const days = [];
+            const maxBars = 7;
+            
+            for (let i = maxBars - 1; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                days.push(d);
+            }
+
+            const counts = days.map(day => {
+                const key = day.toISOString().slice(0, 10);
+                return notes.filter(n => n.date && getDateKey(n.date) === key).length;
+            });
+
+            const max = Math.max(...counts, 1);
+            const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+            bars.innerHTML = counts.map((count, i) => {
+                const height = Math.max(4, (count / max) * 100);
+                const day = days[i];
+                const dayName = dayNames[day.getDay() === 0 ? 6 : day.getDay() - 1];
+                const isToday = i === maxBars - 1;
+                return `
+                    <div class="graph-bar" style="height: ${height}%; ${isToday ? 'background: var(--accent-gradient);' : ''}">
+                        <span class="bar-value">${count}</span>
+                        <span class="bar-label">${dayName}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ================================================================
+        //  БЫСТРЫЕ ФИЛЬТРЫ
+        // ================================================================
+        function setQuickFilter(filter) {
+            quickFilter = filter;
+            document.querySelectorAll('.quick-filters .filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filter);
+            });
+            render();
+        }
+
+        function applyQuickFilter(notesList) {
+            if (quickFilter === 'all') return notesList;
+            if (quickFilter === 'pinned') return notesList.filter(n => n.pinned);
+            if (quickFilter === 'reminder') return notesList.filter(n => n.reminder);
+            if (quickFilter === 'checklist') return notesList.filter(n => n.checklist && n.checklist.length > 0);
+            if (quickFilter === 'locked') return notesList.filter(n => n.locked);
+            if (quickFilter === 'today') {
+                const todayStr = new Date().toISOString().slice(0, 10);
+                return notesList.filter(n => n.date && getDateKey(n.date) === todayStr);
+            }
+            return notesList;
+        }
+
+        // ================================================================
+        //  ГРУППОВЫЕ ОПЕРАЦИИ
+        // ================================================================
+        function toggleSelectNote(id) {
+            if (selectedNotes.has(id)) {
+                selectedNotes.delete(id);
+            } else {
+                selectedNotes.add(id);
+            }
+            updateBulkUI();
+            render();
+        }
+
+        function selectAllNotes() {
+            const items = getDisplayedNotes();
+            items.forEach(n => selectedNotes.add(n.id));
+            updateBulkUI();
+            render();
+            showToast(`✅ Выделено ${items.length} заметок`, 'success');
+        }
+
+        function clearSelection() {
+            selectedNotes.clear();
+            updateBulkUI();
+            render();
+        }
+
+        function updateBulkUI() {
+            const count = selectedNotes.size;
+            selectedCountSpan.textContent = count;
+            if (count > 0) {
+                bulkActions.classList.add('show');
+                const allTags = [...new Set(notes.map(n => n.tag).filter(t => t && t.trim()))];
+                const currentVal = bulkTagSelect.value;
+                bulkTagSelect.innerHTML = '<option value="">🏷️ Сменить тег...</option>' +
+                    allTags.map(t => `<option value="${t}">${t}</option>`).join('');
+                bulkTagSelect.value = currentVal;
+            } else {
+                bulkActions.classList.remove('show');
+            }
+        }
+
+        function getSelectedNotes() {
+            return notes.filter(n => selectedNotes.has(n.id));
+        }
+
+        function bulkPin() {
+            const selected = getSelectedNotes();
+            if (selected.length === 0) return;
+            selected.forEach(n => n.pinned = true);
+            saveNotes();
+            clearSelection();
+            render();
+            showToast(`📌 Закреплено ${selected.length} заметок`, 'success');
+        }
+
+        function bulkUnpin() {
+            const selected = getSelectedNotes();
+            if (selected.length === 0) return;
+            selected.forEach(n => n.pinned = false);
+            saveNotes();
+            clearSelection();
+            render();
+            showToast(`📌 Откреплено ${selected.length} заметок`, 'success');
+        }
+
+        function bulkDelete() {
+            const selected = getSelectedNotes();
+            if (selected.length === 0) return;
+            if (!confirm(`Удалить ${selected.length} заметок в корзину?`)) return;
+            selected.forEach(n => {
+                const index = notes.indexOf(n);
+                if (index !== -1) {
+                    const note = notes.splice(index, 1)[0];
+                    note.deletedAt = new Date().toISOString();
+                    trash.unshift(note);
+                }
+            });
+            saveNotes();
+            saveTrash();
+            clearSelection();
+            render();
+            updateTrashCount();
+            showToast(`🗑️ ${selected.length} заметок удалено в корзину`, 'success');
+        }
+
+        function bulkTag() {
+            const tag = bulkTagSelect.value;
+            if (!tag) return;
+            const selected = getSelectedNotes();
+            if (selected.length === 0) return;
+            selected.forEach(n => n.tag = tag);
+            saveNotes();
+            clearSelection();
+            render();
+            showToast(`🏷️ Тег "${tag}" применён к ${selected.length} заметкам`, 'success');
+        }
+
+        function bulkColor() {
+            const selected = getSelectedNotes();
+            if (selected.length === 0) return;
+            const firstColor = selected[0].color || '#1a1a1a';
+            const color = prompt('Введите цвет в HEX (например, #ff6b6b):', firstColor);
+            if (!color) return;
+            if (!/^#[0-9a-f]{6}$/i.test(color)) {
+                showToast('❌ Неверный формат цвета', 'error');
+                return;
+            }
+            selected.forEach(n => n.color = color);
+            saveNotes();
+            clearSelection();
+            render();
+            showToast(`🎨 Цвет применён к ${selected.length} заметкам`, 'success');
+        }
+
+        // ================================================================
+        //  ПРИВЕТСТВИЕ
+        // ================================================================
+        function setGreeting() {
+            const hour = new Date().getHours();
+            let greeting = '';
+            let emoji = '';
+            if (hour >= 6 && hour < 12) { greeting = 'Доброе утро'; emoji = '🌅'; } 
+            else if (hour >= 12 && hour < 18) { greeting = 'Добрый день'; emoji = '☀️'; } 
+            else if (hour >= 18 && hour < 24) { greeting = 'Добрый вечер'; emoji = '🌙'; } 
+            else { greeting = 'Доброй ночи'; emoji = '🌙'; }
+            const el = document.getElementById('greeting');
+            if (el) el.textContent = `${emoji} ${greeting}!`;
+        }
+
+        // ================================================================
+        //  УПРАВЛЕНИЕ СТРАНИЦАМИ
+        // ================================================================
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function showWelcome() {
+            showPage('welcomePage');
+            setGreeting();
+            toggleStars(true);
+            updateDashboardStats();
+        }
+
+        function showInstructions() {
+            showPage('instructionsPage');
+            toggleStars(true);
+        }
+
+        function goToBoard() {
+            if (isLocked && pinCode) {
+                pinOverlay.classList.remove('hidden');
+                document.getElementById('pinTitle').textContent = '🔐 Введите PIN-код';
+                document.getElementById('pinStatus').textContent = 'Введите 4-значный код для доступа к доске';
+                return;
+            }
+            showPage('boardPage');
+            showTrashMode = false;
+            document.querySelector('.trash-btn').style.borderColor = 'var(--danger)';
+            document.querySelector('.trash-btn').style.color = 'var(--danger)';
+            toggleStars(false);
+            loadNotes();
+            loadTrash();
+            render();
+            updateTrashCount();
+            checkReminders();
+            setInterval(checkReminders, 60000);
+            renderActivityGraph();
+        }
+
+        function showChangelog() {
+            const modal = document.createElement('div');
+            modal.className = 'changelog-modal';
+            let html = `<div class="changelog-content"><h2>📜 История изменений</h2>`;
+            CHANGELOG.forEach(entry => {
+                html += `
+                    <div class="version-block">
+                        <div class="version-header">
+                            <span class="version">v${entry.version}</span>
+                            ${entry.current ? `<span class="version-tag current">Текущая</span>` : ''}
+                        </div>
+                        <div class="version-date">📅 ${entry.date}</div>
+                        <ul class="version-changes">
+                            ${entry.changes.map(change => `<li><span class="emoji">▸</span> ${change}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            });
+            html += `<button class="close-btn" onclick="this.closest('.changelog-modal').remove()">✕ Закрыть</button></div>`;
+            modal.innerHTML = html;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', function(e) { if (e.target === this) this.remove(); });
+        }
+
+        // ================================================================
+        //  ТЕМА
+        // ================================================================
+        function setTheme(theme) {
+            currentTheme = theme;
+            localStorage.setItem('note_theme', theme);
+            applyTheme();
+            document.querySelectorAll('.theme-options button').forEach(btn => {
+                btn.classList.toggle('active-theme', btn.dataset.theme === theme);
+            });
+            setTimeout(updateStarsColor, 100);
+        }
+
+        function applyTheme() {
+            const theme = currentTheme === 'auto' ? getSystemTheme() : currentTheme;
+            document.documentElement.setAttribute('data-theme', theme);
+            setTimeout(updateStarsColor, 50);
+        }
+
+        function getSystemTheme() {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (currentTheme === 'auto') {
+                applyTheme();
+                setTimeout(updateStarsColor, 50);
+            }
+        });
+
+        function loadTheme() {
+            const saved = localStorage.getItem('note_theme');
+            if (saved) currentTheme = saved;
+            document.querySelectorAll('.theme-options button').forEach(btn => {
+                btn.classList.toggle('active-theme', btn.dataset.theme === currentTheme);
+            });
+            applyTheme();
+            setTimeout(updateStarsColor, 100);
+        }
+
+        // ================================================================
+        //  ЗАГРУЗКА / СОХРАНЕНИЕ
+        // ================================================================
+        function loadNotes() {
+            const saved = localStorage.getItem('mini_notes_v15');
+            if (saved) {
+                try { notes = JSON.parse(saved); if (!Array.isArray(notes)) notes = []; } catch { notes = []; }
+            } else {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                
+                notes = [
+                    { 
+                        id: Date.now() + 1, 
+                        text: '📝 Сделать дизайн для доски\n- [x] Нарисовать макет\n- [ ] Сверстать\n- [ ] Добавить анимации', 
+                        tag: 'Работа', 
+                        color: '#a5d8ff', 
+                        pinned: true,
+                        locked: false,
+                        checklist: [
+                            { text: 'Нарисовать макет', checked: true },
+                            { text: 'Сверстать', checked: false },
+                            { text: 'Добавить анимации', checked: false }
+                        ],
+                        reminder: null,
+                        _reminded: false,
+                        date: new Date().toISOString(),
+                        attachments: []
+                    },
+                    { 
+                        id: Date.now() + 2, 
+                        text: 'Изучить https://developer.mozilla.org для улучшения навыков', 
+                        tag: 'бебе', 
+                        color: '#ffec99', 
+                        pinned: false,
+                        locked: false,
+                        checklist: [],
+                        reminder: tomorrow.toISOString(),
+                        _reminded: false,
+                        date: new Date(Date.now() - 60000).toISOString(),
+                        attachments: []
+                    },
+                    { 
+                        id: Date.now() + 3, 
+                        text: 'я ерундулька', 
+                        tag: 'Личное', 
+                        color: '#ffc9c9', 
+                        pinned: false,
+                        locked: true,
+                        checklist: [],
+                        reminder: null,
+                        _reminded: false,
+                        date: new Date(Date.now() - 120000).toISOString(),
+                        attachments: []
+                    },
+                ];
+                saveNotes();
+            }
+            loadHistory();
+            updateDashboardStats();
+        }
+
+        function saveNotes() {
+            localStorage.setItem('mini_notes_v15', JSON.stringify(notes));
+            updateStats();
+            updateDashboardStats();
+            renderActivityGraph();
+        }
+
+        function loadTrash() {
+            const saved = localStorage.getItem('mini_notes_trash_v15');
+            if (saved) {
+                try { trash = JSON.parse(saved); if (!Array.isArray(trash)) trash = []; } catch { trash = []; }
+            } else { trash = []; }
+            updateTrashCount();
+        }
+
+        function saveTrash() {
+            localStorage.setItem('mini_notes_trash_v15', JSON.stringify(trash));
+            updateTrashCount();
+        }
+
+        function updateTrashCount() {
+            if (trashCountSpan) trashCountSpan.textContent = trash.length;
+        }
+
+        function updateStats() {
+            const filtered = showTrashMode ? trash : getDisplayedNotes();
+            statsSpan.textContent = getCountText(filtered.length);
+        }
+
+        // ================================================================
+        //  КОРЗИНА
+        // ================================================================
+        function showTrash() {
+            showTrashMode = !showTrashMode;
+            const btn = document.querySelector('.trash-btn');
+            if (showTrashMode) {
+                btn.style.borderColor = 'var(--success)';
+                btn.style.color = 'var(--success)';
+            } else {
+                btn.style.borderColor = 'var(--danger)';
+                btn.style.color = 'var(--danger)';
+            }
+            clearSelection();
+            render();
+        }
+
+        function moveToTrash(id) {
+            const index = notes.findIndex(n => n.id === id);
+            if (index === -1) return;
+            const note = notes.splice(index, 1)[0];
+            note.deletedAt = new Date().toISOString();
+            trash.unshift(note);
+            saveNotes();
+            saveTrash();
+            selectedNotes.delete(id);
+            render();
+            showToast('🗑️ Заметка удалена', 'info');
+        }
+
+        function restoreNote(id) {
+            const index = trash.findIndex(n => n.id === id);
+            if (index === -1) return;
+            const note = trash.splice(index, 1)[0];
+            delete note.deletedAt;
+            notes.unshift(note);
+            saveTrash();
+            saveNotes();
+            render();
+            updateTrashCount();
+            showToast('↩️ Заметка восстановлена', 'success');
+        }
+
+        function deleteForever(id) {
+            if (!confirm('Удалить заметку навсегда?')) return;
+            trash = trash.filter(n => n.id !== id);
+            saveTrash();
+            render();
+            updateTrashCount();
+            showToast('💀 Заметка удалена навсегда', 'error');
+        }
+
+        function clearTrash() {
+            if (trash.length === 0) return;
+            if (!confirm(`Очистить корзину? ${trash.length} заметок будет удалено навсегда.`)) return;
+            trash = [];
+            saveTrash();
+            render();
+            updateTrashCount();
+            showToast('🧹 Корзина очищена', 'success');
+        }
+
+        // ================================================================
+        //  ФИЛЬТР ПО ТЕГАМ
+        // ================================================================
+        function setFilter(tag) {
+            currentFilter = tag;
+            renderTagStats();
+            render();
+        }
+
+        // ================================================================
+        //  СТАТИСТИКА ПО ТЕГАМ
+        // ================================================================
+        function getTagColor(tag) {
+            const tags = Object.keys(getAllTags()).sort((a, b) => a.localeCompare(b, 'ru'));
+            const index = tags.indexOf(tag);
+            return TAG_COLORS[index % TAG_COLORS.length];
+        }
+
+        function getAllTags() {
+            const allTags = {};
+            notes.forEach(n => {
+                const tag = n.tag || 'Без тега';
+                allTags[tag] = (allTags[tag] || 0) + 1;
+            });
+            return allTags;
+        }
+
+        function renderTagStats() {
+            const allTags = getAllTags();
+            const sortedTags = Object.keys(allTags).sort((a, b) => a.localeCompare(b, 'ru'));
+            
+            let html = `<span class="stats-label">📈 Теги:</span>`;
+            html += `<span class="stat-item ${!currentFilter ? 'active-stat' : ''}" onclick="setFilter('')">Все (${notes.length})</span>`;
+            
+            for (const tag of sortedTags) {
+                const count = allTags[tag];
+                const active = currentFilter === tag ? 'active-stat' : '';
+                const color = getTagColor(tag);
+                html += `<span class="stat-item ${active}" style="border-color:${color};" onclick="setFilter('${tag}')">
+                    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:4px;"></span>
+                    ${tag} <span class="count">${count}</span>
+                </span>`;
+            }
+            tagStatsEl.innerHTML = html;
+        }
+
+        // ================================================================
+        //  ПОДСКАЗКИ ТЕГОВ
+        // ================================================================
+        function updateTagSuggestions() {
+            const query = tagInput.value.trim().toLowerCase();
+            if (!query) { tagSuggestions.classList.remove('show'); return; }
+            const allTags = [...new Set(notes.map(n => n.tag).filter(t => t && t.trim()))];
+            const matches = allTags.filter(t => t.toLowerCase().includes(query));
+            if (matches.length === 0) { tagSuggestions.classList.remove('show'); return; }
+            let html = '';
+            matches.forEach(tag => {
+                const color = getTagColor(tag);
+                html += `<div class="suggestion-item" onclick="selectTag('${tag}')">
+                    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:8px;"></span>
+                    ${tag}
+                </div>`;
+            });
+            tagSuggestions.innerHTML = html;
+            tagSuggestions.classList.add('show');
+        }
+
+        function selectTag(tag) {
+            tagInput.value = tag;
+            tagSuggestions.classList.remove('show');
+            tagInput.focus();
+        }
+
+        tagInput.addEventListener('input', updateTagSuggestions);
+        tagInput.addEventListener('blur', () => {
+            setTimeout(() => tagSuggestions.classList.remove('show'), 200);
+        });
+
+        // ================================================================
+        //  ШАБЛОНЫ
+        // ================================================================
+        function toggleTemplates() {
+            document.getElementById('templateDropdown').classList.toggle('show');
+        }
+
+        function applyTemplate(text) {
+            noteInput.value = text;
+            document.getElementById('templateDropdown').classList.remove('show');
+            noteInput.focus();
+        }
+
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('templateDropdown');
+            const btn = e.target.closest('.template-btn');
+            if (!btn && dropdown) dropdown.classList.remove('show');
+        });
+
+        // ================================================================
+        //  ЧЕК-ЛИСТЫ
+        // ================================================================
+        function toggleChecklistItem(noteId, itemIndex) {
+            if (!noteId) return;
+            const note = notes.find(n => n.id === noteId);
+            if (!note || !note.checklist || !note.checklist[itemIndex]) return;
+            note.checklist[itemIndex].checked = !note.checklist[itemIndex].checked;
+            saveNotes();
+            render();
+            showToast('✅ Чек-лист обновлён', 'success');
+        }
+
+        function parseChecklist(text) {
+            const lines = text.split('\n');
+            const checklist = [];
+            let cleanText = '';
+            let hasChecklist = false;
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                const match = trimmed.match(/^[-*]\s*\[([ x])\]\s*(.*)/i);
+                if (match) {
+                    hasChecklist = true;
+                    checklist.push({
+                        text: match[2],
+                        checked: match[1].toLowerCase() === 'x'
+                    });
+                } else {
+                    cleanText += line + '\n';
+                }
+            });
+
+            return {
+                text: cleanText.trim(),
+                checklist: hasChecklist ? checklist : null,
+                hasChecklist: hasChecklist
+            };
+        }
+
+        // ================================================================
+        //  НАПОМИНАНИЯ
+        // ================================================================
+        function showReminderPicker(noteId) {
+            const note = notes.find(n => n.id === noteId);
+            if (!note) return;
+            currentReminderNoteId = noteId;
+
+            const modal = document.createElement('div');
+            modal.className = 'reminder-modal';
+            const currentReminder = note.reminder || '';
+            modal.innerHTML = `
+                <div class="reminder-modal-content">
+                    <h3>⏰ Напоминание</h3>
+                    <input type="datetime-local" id="reminderDateTime" value="${currentReminder}" min="${new Date().toISOString().slice(0, 16)}" />
+                    <div class="btn-group">
+                        <button class="btn-save" onclick="saveReminder()">💾 Сохранить</button>
+                        ${currentReminder ? `<button class="btn-remove" onclick="removeReminder()">🗑️ Удалить</button>` : ''}
+                        <button class="btn-cancel" onclick="this.closest('.reminder-modal').remove()">✕ Отмена</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', function(e) { if (e.target === this) this.remove(); });
+        }
+
+        function saveReminder() {
+            const input = document.getElementById('reminderDateTime');
+            if (!input) return;
+            const value = input.value;
+            
+            if (!value) {
+                showToast('❌ Пожалуйста, выберите дату и время', 'error');
+                return;
+            }
+            
+            const selected = new Date(value);
+            if (selected < new Date()) {
+                showToast('❌ Дата не может быть в прошлом!', 'error');
+                return;
+            }
+            
+            const note = notes.find(n => n.id === currentReminderNoteId);
+            if (!note) return;
+            note.reminder = value;
+            note._reminded = false;
+            saveNotes();
+            render();
+            document.querySelector('.reminder-modal')?.remove();
+            showToast('⏰ Напоминание установлено', 'success');
+        }
+
+        function removeReminder() {
+            const note = notes.find(n => n.id === currentReminderNoteId);
+            if (!note) return;
+            note.reminder = null;
+            note._reminded = false;
+            saveNotes();
+            render();
+            document.querySelector('.reminder-modal')?.remove();
+            showToast('🗑️ Напоминание удалено', 'info');
+        }
+
+        function checkReminders() {
+            const now = new Date();
+            notes.forEach(note => {
+                if (note.reminder && !note._reminded) {
+                    const reminderDate = new Date(note.reminder);
+                    if (reminderDate <= now) {
+                        note._reminded = true;
+                        saveNotes();
+                        if (Notification.permission === 'granted') {
+                            new Notification('⏰ Напоминание!', {
+                                body: `🔔 ${note.text.substring(0, 50)}...`,
+                                icon: '📌'
+                            });
+                        } else if (Notification.permission === 'default') {
+                            Notification.requestPermission();
+                        }
+                        render();
+                        showToast('⏰ Напоминание!', 'info');
+                    }
+                }
+            });
+        }
+
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // ================================================================
+        //  ПОИСК + СОРТИРОВКА + ФИЛЬТР
+        // ================================================================
+        function getDisplayedNotes() {
+            let result = notes;
+            if (currentFilter) {
+                result = result.filter(n => (n.tag || 'Без тега') === currentFilter);
+            }
+            const query = searchInput.value.trim().toLowerCase();
+            if (query) {
+                result = result.filter(n => n.text.toLowerCase().includes(query));
+            }
+            result = applyQuickFilter(result);
+            const sortType = sortSelect.value;
+            switch (sortType) {
+                case 'date-desc': result.sort((a, b) => b.id - a.id); break;
+                case 'date-asc': result.sort((a, b) => a.id - b.id); break;
+                case 'alpha-asc': result.sort((a, b) => a.text.localeCompare(b.text)); break;
+                case 'alpha-desc': result.sort((a, b) => b.text.localeCompare(a.text)); break;
+                case 'color': result.sort((a, b) => (a.color || '#ffffff').localeCompare(b.color || '#ffffff')); break;
+                case 'reminder': result.sort((a, b) => {
+                    if (a.reminder && !b.reminder) return -1;
+                    if (!a.reminder && b.reminder) return 1;
+                    if (a.reminder && b.reminder) return a.reminder.localeCompare(b.reminder);
+                    return 0;
+                }); break;
+                default: result.sort((a, b) => b.id - a.id);
+            }
+            return result.sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return 0;
+            });
+        }
+
+        // ================================================================
+        //  РЕЖИМ ПРОСМОТРА
+        // ================================================================
+        function setView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-group button').forEach(btn => {
+                btn.classList.toggle('active-view', btn.dataset.view === view);
+            });
+            render();
+        }
+
+        // ================================================================
+        //  РЕНДЕР
+        // ================================================================
+        function render() {
+            const items = showTrashMode ? trash : getDisplayedNotes();
+            container.className = 'notes-grid' + (currentView === 'list' ? ' list-view' : '');
+
+            if (items.length === 0) {
+                const msg = showTrashMode ? '🗑️ Корзина пуста' : '✨ Нет заметок. Добавь первую!';
+                container.innerHTML = `<div class="empty-msg">${msg}</div>`;
+                updateStats();
+                renderTagStats();
+                updateBulkUI();
+                return;
+            }
+
+            let html = '';
+            if (showTrashMode) {
+                html += `
+                    <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;">
+                        <button onclick="showTrash()" style="padding:8px 16px;border:none;border-radius:10px;background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;border:1px solid var(--border-color);transition:all 0.3s ease;">
+                            ← Назад к заметкам
+                        </button>
+                        ${trash.length > 0 ? `<button onclick="clearTrash()" style="padding:8px 16px;border:none;border-radius:10px;background:var(--danger);color:#fff;cursor:pointer;transition:all 0.3s ease;">🧹 Очистить всё</button>` : ''}
+                    </div>
+                `;
+            }
+
+            // Кнопка "Выбрать всё"
+            if (!showTrashMode && items.length > 0) {
+                const allSelected = items.every(n => selectedNotes.has(n.id));
+                html += `
+                    <div style="margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                        <label style="color:var(--text-secondary);font-size:13px;cursor:pointer;">
+                            <input type="checkbox" ${allSelected ? 'checked' : ''} 
+                                   onchange="${allSelected ? 'clearSelection()' : 'selectAllNotes()'}" 
+                                   style="accent-color:var(--accent);margin-right:6px;" />
+                            ${allSelected ? 'Снять все' : 'Выбрать все'}
+                        </label>
+                        <span style="color:var(--text-muted);font-size:12px;">(выбрано: ${selectedNotes.size})</span>
+                    </div>
+                `;
+            }
+
+            for (let item of items) {
+                const bgColor = item.color || '#1a1a1a';
+                const isPinned = item.pinned ? 'pinned' : '';
+                const isLocked = item.locked ? 'locked' : '';
+                const isSelected = selectedNotes.has(item.id) ? 'selected' : '';
+                const isNew = isNewNote(item.date) ? 'is-new' : '';
+                const tagColor = item.tag ? getTagColor(item.tag) : 'transparent';
+
+                let isOverdue = false;
+                if (item.reminder && !item._reminded) {
+                    const reminderDate = new Date(item.reminder);
+                    isOverdue = reminderDate < new Date();
+                }
+                const overdueClass = isOverdue ? 'overdue' : '';
+
+                let checklistHtml = '';
+                let textHtml = item.text;
+                let progressHtml = '';
+
+                if (item.checklist && item.checklist.length > 0) {
+                    const total = item.checklist.length;
+                    const done = item.checklist.filter(c => c.checked).length;
+                    const isComplete = done === total && total > 0;
+                    
+                    checklistHtml = item.checklist.map((checkItem, index) => `
+                        <div>
+                            <span class="checkbox" onclick="toggleChecklistItem(${item.id}, ${index})">
+                                ${checkItem.checked ? '☑️' : '☐'}
+                            </span>
+                            <span class="${checkItem.checked ? 'checked' : ''}">${renderLinks(escapeHtml(checkItem.text))}</span>
+                        </div>
+                    `).join('');
+                    
+                    progressHtml = `<div class="checklist-progress ${isComplete ? 'done' : ''}">${done}/${total} выполнено${isComplete ? ' ✅' : ''}</div>`;
+                    textHtml = '';
+                } else {
+                    const parsed = parseChecklist(item.text);
+                    if (parsed.hasChecklist) {
+                        item.checklist = parsed.checklist;
+                        saveNotes();
+                        const total = parsed.checklist.length;
+                        const done = parsed.checklist.filter(c => c.checked).length;
+                        const isComplete = done === total && total > 0;
+                        
+                        checklistHtml = parsed.checklist.map((checkItem, index) => `
+                            <div>
+                                <span class="checkbox" onclick="toggleChecklistItem(${item.id}, ${index})">
+                                    ${checkItem.checked ? '☑️' : '☐'}
+                                </span>
+                                <span class="${checkItem.checked ? 'checked' : ''}">${renderLinks(escapeHtml(checkItem.text))}</span>
+                            </div>
+                        `).join('');
+                        
+                        progressHtml = `<div class="checklist-progress ${isComplete ? 'done' : ''}">${done}/${total} выполнено${isComplete ? ' ✅' : ''}</div>`;
+                        textHtml = '';
+                    } else {
+                        textHtml = renderLinks(escapeHtml(item.text));
+                    }
+                }
+
+                // Вложения
+                const attachmentsHtml = item.attachments && item.attachments.length > 0 ? 
+                    renderAttachments(item.attachments) : '';
+
+                let reminderHtml = '';
+                if (item.reminder) {
+                    const reminderDate = new Date(item.reminder);
+                    const formatted = reminderDate.toLocaleString();
+                    const overdueClass = isOverdue ? 'overdue' : '';
+                    reminderHtml = `<div class="note-reminder ${overdueClass}">⏰ ${formatted} ${isOverdue ? '⚠️ Просрочено!' : ''}</div>`;
+                }
+
+                const tagDisplay = item.tag ? `<span class="note-tag" style="background:${tagColor}30;border-color:${tagColor};color:${tagColor};">${escapeHtml(item.tag)}</span>` : '';
+
+                // ===== ИКОНКИ ФУНКЦИЙ =====
+                let iconsHtml = '';
+                if (item.checklist && item.checklist.length > 0) iconsHtml += '<span class="icon-badge" title="Есть чек-лист">📋</span>';
+                if (item.reminder) iconsHtml += '<span class="icon-badge" title="Есть напоминание">⏰</span>';
+                if (hasLink(item.text)) iconsHtml += '<span class="icon-badge" title="Есть ссылка">🔗</span>';
+                if (item.pinned) iconsHtml += '<span class="icon-badge" title="Закреплено">📌</span>';
+                if (item.locked) iconsHtml += '<span class="icon-badge" title="Защищено PIN-кодом">🔒</span>';
+                if (isNew) iconsHtml += '<span class="icon-badge" title="Новая заметка">🆕</span>';
+                if (item.attachments && item.attachments.length > 0) iconsHtml += '<span class="icon-badge" title="Есть вложения">📎</span>';
+
+                let actions = '';
+                if (showTrashMode) {
+                    actions = `
+                        <button class="restore-btn" onclick="restoreNote(${item.id})" title="Восстановить">↩️</button>
+                        <button class="delete-forever-btn" onclick="deleteForever(${item.id})" title="Удалить навсегда">💀</button>
+                    `;
+                } else {
+                    actions = `
+                        <button class="pin-btn" onclick="togglePin(${item.id})" title="Закрепить">📌</button>
+                        <button class="reminder-btn" onclick="showReminderPicker(${item.id})" title="Напоминание">⏰</button>
+                        <button class="color-btn" onclick="showColorPicker(${item.id})" title="Цвет">🎨</button>
+                        <button class="lock-btn" onclick="toggleLockNote(${item.id})" title="Защитить">${item.locked ? '🔓' : '🔒'}</button>
+                        <button class="history-btn" onclick="showHistory(${item.id})" title="История">📜</button>
+                        <button class="edit-btn" onclick="editNote(${item.id})" title="Редактировать">✏️</button>
+                        <button class="delete-btn" onclick="moveToTrash(${item.id})" title="Удалить">🗑️</button>
+                    `;
+                }
+
+                const checkboxHtml = !showTrashMode ? `
+                    <input type="checkbox" class="note-checkbox" 
+                           ${isSelected ? 'checked' : ''} 
+                           onchange="toggleSelectNote(${item.id})" 
+                           title="Выбрать для групповых операций" />
+                ` : '';
+
+                // Кнопка добавления вложения
+                const attachmentBtn = !showTrashMode ? `
+                    <button class="edit-btn" onclick="showAttachmentModal(${item.id})" title="Вложения">📎</button>
+                ` : '';
+
+                html += `
+                    <div class="note ${isPinned} ${isLocked} ${overdueClass} ${isSelected} ${isNew}" style="background:${bgColor};">
+                        ${checkboxHtml}
+                        ${isNew ? '<span class="badge-new">NEW</span>' : ''}
+                        <div class="note-text">
+                            ${textHtml}
+                            ${checklistHtml ? `<div style="margin-top:4px;">${checklistHtml}</div>` : ''}
+                            ${progressHtml}
+                            ${attachmentsHtml ? `<div style="margin-top:6px;">${attachmentsHtml}</div>` : ''}
+                        </div>
+                        ${tagDisplay}
+                        ${reminderHtml}
+                        ${iconsHtml ? `<div class="note-icons">${iconsHtml}</div>` : ''}
+                        <div class="note-date">${formatDate(item.date)}${item.deletedAt ? ' (удалена)' : ''}</div>
+                        <div class="note-actions">
+                            ${attachmentBtn}
+                            ${actions}
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+            updateStats();
+            renderTagStats();
+            updateBulkUI();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ================================================================
+        //  CRUD
+        // ================================================================
+        function addNote() {
+            const text = noteInput.value.trim();
+            if (!text) { noteInput.focus(); return; }
+            const tag = tagInput.value.trim() || '';
+
+            const parsed = parseChecklist(text);
+            const newNote = {
+                id: Date.now(),
+                text: parsed.hasChecklist ? parsed.text || text : text,
+                tag: tag,
+                color: '#1a1a1a',
+                pinned: false,
+                locked: false,
+                date: new Date().toISOString(),
+                checklist: parsed.hasChecklist ? parsed.checklist : [],
+                reminder: null,
+                _reminded: false,
+                attachments: []
+            };
+            notes.unshift(newNote);
+            saveVersion(newNote);
+            saveNotes();
+            render();
+            noteInput.value = '';
+            tagInput.value = '';
+            tagSuggestions.classList.remove('show');
+            noteInput.focus();
+            showToast('➕ Заметка добавлена', 'success');
+        }
+
+        function editNote(id) {
+            const note = notes.find(n => n.id === id);
+            if (!note) return;
+            if (note.locked && isLocked) {
+                showToast('🔒 Заметка защищена, разблокируйте доску', 'error');
+                return;
+            }
+            const newText = prompt('Редактировать заметку:', note.text);
+            if (newText === null) return;
+            const trimmed = newText.trim();
+            if (!trimmed) { showToast('❌ Текст не может быть пустым', 'error'); return; }
+            
+            saveVersion(note);
+            
+            note.text = trimmed;
+            const parsed = parseChecklist(trimmed);
+            if (parsed.hasChecklist) {
+                note.checklist = parsed.checklist;
+                note.text = parsed.text || trimmed;
+            } else {
+                note.checklist = [];
+            }
+            note.date = new Date().toISOString();
+            saveNotes();
+            render();
+            showToast('✏️ Заметка обновлена', 'success');
+        }
+
+        function togglePin(id) {
+            const note = notes.find(n => n.id === id);
+            if (!note) return;
+            note.pinned = !note.pinned;
+            saveNotes();
+            render();
+            showToast(note.pinned ? '📌 Заметка закреплена' : '📌 Заметка откреплена', 'success');
+        }
+
+        function toggleLockNote(id) {
+            const note = notes.find(n => n.id === id);
+            if (!note) return;
+            if (!pinCode) {
+                showToast('ℹ️ Сначала установите PIN-код на главной', 'info');
+                return;
+            }
+            note.locked = !note.locked;
+            saveNotes();
+            render();
+            showToast(note.locked ? '🔒 Заметка защищена' : '🔓 Защита снята', 'success');
+        }
+
+        // ================================================================
+        //  ПАЛИТРА ЦВЕТОВ
+        // ================================================================
+        function showColorPicker(id) {
+            const note = notes.find(n => n.id === id);
+            if (!note) return;
+            currentColorNoteId = id;
+            const modal = document.createElement('div');
+            modal.className = 'color-modal';
+            modal.setAttribute('tabindex', '0');
+            modal.innerHTML = `
+                <div class="color-modal-content">
+                    <h3>🎨 Выберите цвет</h3>
+                    <div class="current-color-display">
+                        <div class="color-preview" style="background:${note.color || '#1a1a1a'};"></div>
+                        <span class="color-hex" id="currentColorHex">${note.color || '#1a1a1a'}</span>
+                    </div>
+                    <div class="preset-colors">
+                        ${PRESET_COLORS.map(c => `
+                            <div class="color-option ${note.color === c ? 'active-color' : ''}" 
+                                 style="background:${c};${c === '#ffffff' ? 'border:1px solid #ddd;' : ''}" 
+                                 data-color="${c}"
+                                 onclick="setNoteColor(${id}, '${c}'); updateColorDisplay('${c}')">
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="custom-color-row">
+                        <label>Свой цвет:</label>
+                        <input type="color" id="customColorPicker" value="${note.color || '#1a1a1a'}" 
+                               onchange="setNoteColor(${id}, this.value); updateColorDisplay(this.value)" />
+                    </div>
+                    <button class="close-btn" onclick="closeColorModal()">✕ Закрыть</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.focus();
+            modal.addEventListener('click', function(e) { if (e.target === this) closeColorModal(); });
+        }
+
+        function closeColorModal() {
+            document.querySelectorAll('.color-modal').forEach(el => el.remove());
+            currentColorNoteId = null;
+        }
+
+        function updateColorDisplay(color) {
+            const hexSpan = document.getElementById('currentColorHex');
+            const preview = document.querySelector('.color-preview');
+            if (hexSpan) hexSpan.textContent = color;
+            if (preview) preview.style.background = color;
+            document.querySelectorAll('.color-option').forEach(el => {
+                el.classList.toggle('active-color', el.style.background === color ||
+                    (el.style.background === 'rgb(255, 255, 255)' && color === '#ffffff'));
+            });
+            const picker = document.getElementById('customColorPicker');
+            if (picker) picker.value = color;
+        }
+
+        function setNoteColor(id, color) {
+            const note = notes.find(n => n.id === id);
+            if (!note) return;
+            note.color = color;
+            saveNotes();
+            render();
+        }
+
+        // ================================================================
+        //  ЭКСПОРТ (Синхронизация)
+        // ================================================================
+        function showExportModal() {
+            const modal = document.createElement('div');
+            modal.className = 'export-modal';
+            modal.innerHTML = `
+                <div class="export-modal-content">
+                    <h3>📤 Экспорт и синхронизация</h3>
+                    <div class="export-options">
+                        <button onclick="exportJSON()">📦 JSON (полный)</button>
+                        <button onclick="exportMarkdown()">📝 Markdown (.md)</button>
+                        <button onclick="exportTXT()">📄 Plain Text (.txt)</button>
+                        <button onclick="syncToCloud()">☁️ Синхронизировать</button>
+                        <button onclick="backupData()">💾 Создать резервную копию</button>
+                    </div>
+                    <button class="close-btn" onclick="this.closest('.export-modal').remove()">✕ Закрыть</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', function(e) { if (e.target === this) this.remove(); });
+        }
+
+        function exportJSON() {
+            const data = { version: VERSION, exportedAt: new Date().toISOString(), notes: notes, trash: trash };
+            downloadFile(JSON.stringify(data, null, 2), `notes_${new Date().toISOString().slice(0,10)}.json`,
+            'application/json');
+            closeModals();
+            showToast('📦 JSON экспортирован', 'success');
+        }
+
+        function exportMarkdown() {
+            let md = `# 📌 Мои заметки\n\n*Экспортировано: ${new Date().toLocaleString()}*\n\n`;
+            const allNotes = [...notes];
+            allNotes.sort((a, b) => b.id - a.id);
+            allNotes.forEach(n => {
+                const tag = n.tag ? ` **#${n.tag}**` : '';
+                const pinned = n.pinned ? ' 📌' : '';
+                const locked = n.locked ? ' 🔒' : '';
+                const date = n.date || 'без даты';
+                const reminder = n.reminder ? ` ⏰ ${new Date(n.reminder).toLocaleString()}` : '';
+                md += `## ${n.text}${pinned}${locked}${tag}${reminder}\n`;
+                if (n.checklist && n.checklist.length > 0) {
+                    n.checklist.forEach(item => {
+                        md += `- ${item.checked ? '✅' : '☐'} ${item.text}\n`;
+                    });
+                }
+                if (n.attachments && n.attachments.length > 0) {
+                    md += `- 📎 Вложения: ${n.attachments.map(a => a.name).join(', ')}\n`;
+                }
+                md += `- 📅 ${date}\n`;
+                md += `- 🎨 Цвет: ${n.color || 'по умолчанию'}\n\n`;
+            });
+            md += `\n---\n*Всего заметок: ${notes.length}*`;
+            downloadFile(md, `notes_${new Date().toISOString().slice(0,10)}.md`, 'text/markdown');
+            closeModals();
+            showToast('📝 Markdown экспортирован', 'success');
+        }
+
+        function exportTXT() {
+            let txt = `📌 МОИ ЗАМЕТКИ\nЭкспортировано: ${new Date().toLocaleString()}\n${'='.repeat(50)}\n\n`;
+            const allNotes = [...notes];
+            allNotes.sort((a, b) => b.id - a.id);
+            allNotes.forEach((n, i) => {
+                const tag = n.tag ? ` [${n.tag}]` : '';
+                const pinned = n.pinned ? ' [ЗАКРЕПЛЕНО]' : '';
+                const locked = n.locked ? ' [ЗАЩИЩЕНО]' : '';
+                const date = n.date || 'без даты';
+                const reminder = n.reminder ? ` ⏰ ${new Date(n.reminder).toLocaleString()}` : '';
+                txt += `${i+1}. ${n.text}${pinned}${locked}${tag}${reminder}\n`;
+                if (n.checklist && n.checklist.length > 0) {
+                    n.checklist.forEach(item => {
+                        txt += `   ${item.checked ? '✅' : '☐'} ${item.text}\n`;
+                    });
+                }
+                if (n.attachments && n.attachments.length > 0) {
+                    txt += `   📎 Вложения: ${n.attachments.map(a => a.name).join(', ')}\n`;
+                }
+                txt += `   📅 ${date}\n\n`;
+            });
+            txt += `${'='.repeat(50)}\nВсего заметок: ${notes.length}`;
+            downloadFile(txt, `notes_${new Date().toISOString().slice(0,10)}.txt`, 'text/plain');
+            closeModals();
+            showToast('📄 TXT экспортирован', 'success');
+        }
+
+        function syncToCloud() {
+            const data = {
+                version: VERSION,
+                syncedAt: new Date().toISOString(),
+                notes: notes,
+                trash: trash,
+                pin: pinCode
+            };
+            try {
+                localStorage.setItem('mini_notes_cloud_backup', JSON.stringify(data));
+                showToast('☁️ Синхронизация выполнена успешно!', 'success');
+            } catch (e) {
+                showToast('❌ Ошибка синхронизации: ' + e.message, 'error');
+            }
+        }
+
+        function backupData() {
+            const data = {
+                version: VERSION,
+                backedUpAt: new Date().toISOString(),
+                notes: notes,
+                trash: trash,
+                pin: pinCode,
+                history: noteHistory
+            };
+            downloadFile(JSON.stringify(data, null, 2), `backup_${new Date().toISOString().slice(0,10)}.json`,
+            'application/json');
+            showToast('💾 Резервная копия создана', 'success');
+        }
+
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function closeModals() {
+            document.querySelectorAll('.export-modal').forEach(el => el.remove());
+            document.querySelectorAll('.changelog-modal').forEach(el => el.remove());
+            document.querySelectorAll('.reminder-modal').forEach(el => el.remove());
+            document.querySelectorAll('.color-modal').forEach(el => el.remove());
+            document.querySelectorAll('.history-modal').forEach(el => el.remove());
+            document.querySelectorAll('.attachment-modal').forEach(el => el.remove());
+            document.querySelectorAll('.voice-modal').forEach(el => el.remove());
+        }
+
+        // ================================================================
+        //  ИМПОРТ JSON
+        // ================================================================
+        function importJSON(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    let importedNotes = data.notes || data;
+                    let importedTrash = data.trash || [];
+                    if (!Array.isArray(importedNotes)) { showToast('❌ Неверный формат', 'error'); return; }
+                    if (!confirm(`Импортировать ${importedNotes.length} заметок и ${importedTrash.length} в корзине?`))
+                        return;
+                    notes = importedNotes.map(n => ({
+                        id: n.id || Date.now() + Math.random(),
+                        text: n.text || '',
+                        tag: n.tag || '',
+                        color: n.color || '#1a1a1a',
+                        pinned: n.pinned || false,
+                        locked: n.locked || false,
+                        date: n.date || new Date().toISOString(),
+                        checklist: n.checklist || [],
+                        reminder: n.reminder || null,
+                        _reminded: n._reminded || false,
+                        attachments: n.attachments || []
+                    }));
+                    trash = importedTrash.map(n => ({
+                        id: n.id || Date.now() + Math.random(),
+                        text: n.text || '',
+                        tag: n.tag || '',
+                        color: n.color || '#1a1a1a',
+                        pinned: n.pinned || false,
+                        locked: n.locked || false,
+                        date: n.date || new Date().toISOString(),
+                        deletedAt: n.deletedAt || new Date().toISOString(),
+                        checklist: n.checklist || [],
+                        reminder: n.reminder || null,
+                        _reminded: n._reminded || false,
+                        attachments: n.attachments || []
+                    }));
+                    if (data.pin) {
+                        pinCode = data.pin;
+                        savePin();
+                        updatePinUI();
+                    }
+                    saveNotes();
+                    saveTrash();
+                    render();
+                    updateTrashCount();
+                    clearSelection();
+                    showToast(`✅ Импортировано ${notes.length} заметок`, 'success');
+                } catch (err) { showToast('❌ Ошибка: ' + err.message, 'error'); }
+                document.getElementById('importFile').value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        // ================================================================
+        //  ГОРЯЧИЕ КЛАВИШИ (ГАЗ)
+        // ================================================================
+        document.addEventListener('keydown', (e) => {
+            // ===== ENTER — добавить заметку =====
+            if (e.key === 'Enter' && document.getElementById('boardPage').classList.contains('active')) {
+                if (document.activeElement === noteInput || document.activeElement === tagInput) {
+                    e.preventDefault();
+                    addNote();
+                }
+            }
+
+            // ===== ENTER в палитре — применить цвет =====
+            if (e.key === 'Enter') {
+                const colorModal = document.querySelector('.color-modal');
+                if (colorModal && currentColorNoteId !== null) {
+                    e.preventDefault();
+                    const activeColor = document.querySelector('.color-option.active-color');
+                    const customColor = document.getElementById('customColorPicker');
+                    let color = '#1a1a1a';
+                    if (activeColor) color = activeColor.dataset.color || activeColor.style.background;
+                    else if (customColor) color = customColor.value;
+                    setNoteColor(currentColorNoteId, color);
+                    closeColorModal();
+                    showToast('🎨 Цвет применён', 'success');
+                }
+            }
+
+            // ===== ESC — закрыть всё =====
+            if (e.key === 'Escape') {
+                closeColorModal();
+                document.querySelectorAll('.changelog-modal').forEach(el => el.remove());
+                document.querySelectorAll('.export-modal').forEach(el => el.remove());
+                document.querySelectorAll('.reminder-modal').forEach(el => el.remove());
+                document.querySelectorAll('.history-modal').forEach(el => el.remove());
+                document.querySelectorAll('.attachment-modal').forEach(el => el.remove());
+                document.querySelectorAll('.voice-modal').forEach(el => el.remove());
+                document.getElementById('templateDropdown')?.classList.remove('show');
+                tagSuggestions?.classList.remove('show');
+                if (document.getElementById('instructionsPage').classList.contains('active')) {
+                    showWelcome();
+                } else if (showTrashMode) {
+                    showTrash();
+                }
+                if (isRecording) stopRecording();
+            }
+
+            // ===== Ctrl+A — выделить все заметки =====
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                if (document.getElementById('boardPage').classList.contains('active')) {
+                    e.preventDefault();
+                    const items = getDisplayedNotes();
+                    if (items.length > 0) {
+                        const allSelected = items.every(n => selectedNotes.has(n.id));
+                        if (allSelected) {
+                            clearSelection();
+                            showToast('✕ Снято выделение со всех', 'info');
+                        } else {
+                            items.forEach(n => selectedNotes.add(n.id));
+                            updateBulkUI();
+                            render();
+                            showToast(`✅ Выделено ${items.length} заметок`, 'success');
+                        }
+                    }
+                }
+            }
+
+            // ===== Ctrl+D — удалить выделенные =====
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                if (document.getElementById('boardPage').classList.contains('active')) {
+                    e.preventDefault();
+                    if (selectedNotes.size > 0) {
+                        bulkDelete();
+                    } else {
+                        showToast('ℹ️ Нет выделенных заметок', 'info');
+                    }
+                }
+            }
+
+            // ===== Ctrl+P — закрепить выделенные =====
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                if (document.getElementById('boardPage').classList.contains('active')) {
+                    e.preventDefault();
+                    if (selectedNotes.size > 0) {
+                        bulkPin();
+                    } else {
+                        showToast('ℹ️ Нет выделенных заметок', 'info');
+                    }
+                }
+            }
+
+            // ===== Ctrl+Shift+L — заблокировать доску =====
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') {
+                e.preventDefault();
+                if (document.getElementById('boardPage').classList.contains('active')) {
+                    lockBoard();
+                }
+            }
+        });
+
+        // ================================================================
+        //  СТАРТ
+        // ================================================================
+        loadTheme();
+        loadPin();
+        loadNotes();
+        loadTrash();
+        loadHistory();
+        render();
+        setGreeting();
+        setView('grid');
+        createStars();
+        toggleStars(true);
+        setTimeout(updateStarsColor, 200);
+        updateDashboardStats();
+        renderActivityGraph();
+
+        // Если PIN есть — показываем оверлей при входе на доску
+        // Но на главной странице оверлей не показываем
+
+        console.log(`📌 Мини-доска заметок v${VERSION} загружена`);
+        console.log(`🔐 PIN-код: ${pinCode ? 'установлен' : 'не установлен'}`);
+        console.log(`📎 Вложения, 🎙️ Голосовые заметки, 🔄 История версий`);
+        console.log(`🌐 Синхронизация, 🎨 Кастомизация, 📊 Расширенная статистика`);
+        console.log(`⌨️ ГАЗ: Ctrl+A — выделить все, Ctrl+D — удалить, Ctrl+P — закрепить`);
+        console.log(`⌨️ Ctrl+Shift+L — заблокировать доску`);
+    </script>
+</body>
+</html>
