@@ -51,7 +51,7 @@
 ## 📦 Установка
 Просто откройте `index.html` в браузере!
 
-## 🌐 Демо
-[Открыть доску заметок][(https://yuliapositive.github.io/mini-notes-board/])
+**Демо:** 
+[тык по ссылке](https://yuliapositive.github.io/mini-notes-board/)
 
 ---
