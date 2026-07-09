@@ -52,6 +52,6 @@
 Просто откройте `index.html` в браузере!
 
 ## 🌐 Демо
-[Открыть доску заметок]([(https://yuliapositive.github.io/mini-notes-board/]))
+[Открыть доску заметок][(https://yuliapositive.github.io/mini-notes-board/])
 
 ---
