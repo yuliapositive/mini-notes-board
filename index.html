@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Мини-доска заметок v1.8.0</title>
+    <title>Мини-доска заметок</title>
     <!-- ===== PWA MANIFEST ===== -->
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#7c6df0" />
@@ -5017,19 +5017,17 @@
         // ================================================================
 
         function loadPin() {
-            const saved = localStorage.getItem('mini_notes_pin');
-            if (saved) {
-                pinCode = saved;
-                isLocked = true;
-                pinIcon.textContent = '🔐';
-                pinLabel.textContent = 'Сменить PIN';
-            } else {
-                pinCode = null;
-                isLocked = false;
-                pinIcon.textContent = '🔐';
-                pinLabel.textContent = 'Установить PIN';
-            }
-        }
+    const saved = localStorage.getItem('mini_notes_pin');
+    if (saved) {
+        pinCode = saved;
+        // НЕ БЛОКИРУЕМ СРАЗУ! Только если пользователь сам заблокировал
+        const locked = localStorage.getItem('mini_notes_locked');
+        isLocked = locked === 'true';
+    } else {
+        pinCode = null;
+        isLocked = false; // ✅ ПЕРВЫЙ РАЗ — ОТКРЫТО!
+    }
+}
 
         function savePin() {
             if (pinCode) {
