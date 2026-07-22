@@ -2,27 +2,11 @@
 
 > Минималистичная, удобная, твоя. Доска заметок с умными тегами, графиком активности, календарём и ИИ-помощником.
 
-![Version](https://img.shields.io/badge/version-1.9.0-7c6df0?style=flat-square&logo=github)
-![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
-![Made with](https://img.shields.io/badge/made%20with-❤️-ff69b4?style=flat-square)
-
----
-
-## 📸 Скриншоты
-
-| Главная страница | Доска с заметками |
-|------------------|-------------------|
-| ![Главная](screenshots/main.png) | ![Доска](screenshots/board.png) |
-
-| Календарь | Активность |
-|-----------|------------|
-| ![Календарь](screenshots/calendar.png) | ![Активность](screenshots/activity.png) |
-
 ---
 
 ## 🚀 Демо
 
-**[Живая демонстрация](https://your-username.github.io/notes-board/)**
+**[Живая демонстрация](https://yuliapositive.github.io/mini-notes-board/)**
 
 ---
 
