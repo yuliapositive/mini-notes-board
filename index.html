@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Мини-доска заметок</title>
+    <title>Мини-доска заметок v1.9.0</title>
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#7c6df0" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -2005,7 +2005,7 @@
         <!-- ===== INSTRUCTIONS PAGE ===== -->
         <div class="page" id="instructionsPage">
             <div class="instructions">
-                <h2>📖 Как пользоваться доской</h2>
+                <h2>📖 Как пользоваться доской v1.9.0</h2>
                 
                 <div class="instruction-block">
                     <div class="block-title">📌 База</div>
@@ -2153,7 +2153,6 @@
                                 <div class="template-item" onclick="saveTemplate()">💾 Сохранить шаблон</div>
                             </div>
                         </div>
-                        <button class="ai-btn" onclick="showAIAssistant()" title="ИИ-помощник">🤖 ИИ</button>
                     </div>
 
                     <div class="search-sort-bar" style="margin-bottom:0;box-shadow:none;border:none;padding:0;">
@@ -5139,25 +5138,6 @@
             const btn = e.target.closest('.template-btn');
             if (!btn && dropdown) dropdown.classList.remove('show');
         });
-
-        // ===== ИИ-ПОМОЩНИК =====
-        function showAIAssistant() {
-            const noteInput = document.getElementById('noteInput');
-            const text = noteInput ? noteInput.value.trim() : '';
-            if (!text) {
-                showToast('ℹ️ Напишите начало заметки для ИИ-помощника', 'info');
-                if (noteInput) noteInput.focus();
-                return;
-            }
-
-            const similarNotes = notes.filter(n =>
-                n.text.toLowerCase().includes(text.toLowerCase().split(' ').slice(0, 2).join(' '))
-            );
-
-            if (similarNotes.length === 0) {
-                showToast('🤖 Нет похожих заметок для автодополнения', 'info');
-                return;
-            }
 
             const suggestion = similarNotes[0].text;
             const modal = document.createElement('div');
