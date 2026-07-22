@@ -2297,7 +2297,8 @@
                 '📎 Drag & Drop на карточку заметки',
                 '🔔 Повторяющиеся напоминания',
                 '📅 Календарь с заметками по дням',
-                '📄 Экспорт в DOCX и PDF'
+                '📄 Экспорт в DOCX и PDF',
+                '🔙 Кнопка "Вернуться к доске" в корзине'
             ]
         }, {
             version: '1.8.0',
@@ -4360,6 +4361,31 @@
             
             container.className = 'notes-grid' + (currentView === 'list' ? ' list-view' : '');
 
+            // КНОПКА "ВЕРНУТЬСЯ К ДОСКЕ" В КОРЗИНЕ
+            if (showTrashMode) {
+                const backBtnHtml = `
+                    <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                        <button onclick="showTrash()" style="padding:8px 16px;border:none;border-radius:10px;background:var(--accent-gradient);color:#fff;cursor:pointer;border:1px solid var(--accent);transition:all 0.3s ease;font-weight:600;">
+                            ← Вернуться к доске
+                        </button>
+                        ${trash.length > 0 ? `<button onclick="clearTrash()" style="padding:8px 16px;border:none;border-radius:10px;background:var(--danger);color:#fff;cursor:pointer;transition:all 0.3s ease;">🧹 Очистить всё</button>` : ''}
+                        <span style="color:var(--text-muted);font-size:12px;margin-left:auto;">💡 Нажмите Enter для возврата</span>
+                    </div>
+                `;
+                // Добавляем кнопку в начало контейнера с заметками
+                // Вставляем перед заметками через внешний div
+                const emptyDiv = document.createElement('div');
+                emptyDiv.id = 'trashHeader';
+                if (!document.getElementById('trashHeader')) {
+                    container.insertAdjacentHTML('beforebegin', `<div id="trashHeader">${backBtnHtml}</div>`);
+                } else {
+                    document.getElementById('trashHeader').innerHTML = backBtnHtml;
+                }
+            } else {
+                const header = document.getElementById('trashHeader');
+                if (header) header.remove();
+            }
+
             if (items.length === 0) {
                 const msg = showTrashMode ? '🗑️ Корзина пуста' : '✨ Нет заметок. Добавь первую!';
                 container.innerHTML = `<div class="empty-msg">${msg}</div>`;
@@ -4370,17 +4396,6 @@
             }
 
             let html = '';
-            if (showTrashMode) {
-                html += `
-                    <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;">
-                        <button onclick="showTrash()" style="padding:8px 16px;border:none;border-radius:10px;background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;border:1px solid var(--border-color);transition:all 0.3s ease;">
-                            ← Назад к заметкам
-                        </button>
-                        ${trash.length > 0 ? `<button onclick="clearTrash()" style="padding:8px 16px;border:none;border-radius:10px;background:var(--danger);color:#fff;cursor:pointer;transition:all 0.3s ease;">🧹 Очистить всё</button>` : ''}
-                    </div>
-                `;
-            }
-
             if (!showTrashMode && items.length > 0) {
                 const allSelected = items.every(n => selectedNotes.has(n.id));
                 html += `
@@ -4641,7 +4656,6 @@
         }
 
         function exportDOCX() {
-            // Создаём простой DOCX через HTML
             let html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' 
                           xmlns:w='urn:schemas-microsoft-com:office:word' 
                           xmlns='http://www.w3.org/TR/REC-html40'>
@@ -4704,7 +4718,6 @@
         }
 
         function exportPDF() {
-            // Используем window.print() для сохранения как PDF
             const printContent = document.createElement('div');
             printContent.style.cssText = 'padding: 40px; font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;';
             
@@ -4741,13 +4754,11 @@
             printContent.innerHTML = html;
             document.body.appendChild(printContent);
             
-            // Сохраняем оригинальный title
             const originalTitle = document.title;
             document.title = 'Мои заметки';
             
             window.print();
             
-            // Восстанавливаем
             document.title = originalTitle;
             document.body.removeChild(printContent);
             closeModals();
@@ -5355,6 +5366,7 @@
         console.log(`📌 Мини-доска заметок v${VERSION} загружена!`);
         console.log('✅ ВСЁ РАБОТАЕТ!');
         console.log('✅ Отдельное поле для тега');
+        console.log('✅ Кнопка "Вернуться к доске" в корзине');
         console.log('✅ Enter в корзине -> возврат на доску');
         console.log('✅ Экспорт в DOCX и PDF');
         console.log('✅ Полная инструкция как в v1.7.0/v1.8.0');
