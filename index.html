@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Мини-доска заметок v1.9.0</title>
+    <title>Мини-доска заметок</title>
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#7c6df0" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📌</text></svg>" />
     <style>
-        /* ===== ОСНОВНЫЕ ПЕРЕМЕННЫЕ ===== */
         :root {
             --bg-primary: #1e1e2f;
             --bg-secondary: #2a2a3e;
@@ -535,7 +534,6 @@
             animation: slideUp 0.8s ease-out 0.2s both;
         }
 
-        /* ===== КНОПКИ ===== */
         .action-group {
             display: flex;
             flex-wrap: wrap;
@@ -608,7 +606,6 @@
             box-shadow: 0 8px 30px rgba(124, 109, 240, 0.4);
         }
 
-        /* ===== ТЕМЫ ===== */
         .theme-selector {
             margin: 0 auto;
             padding: 24px 28px;
@@ -665,7 +662,6 @@
         }
         .theme-options button.active-theme::after { content: ' ✓'; font-weight: 700; }
 
-        /* ===== INSTRUCTIONS ===== */
         .instructions {
             max-width: 700px;
             margin: 30px auto;
@@ -739,7 +735,6 @@
             transform: translateX(-4px);
         }
 
-        /* ===== CHANGELOG ===== */
         .changelog-modal {
             position: fixed;
             inset: 0;
@@ -819,7 +814,6 @@
         }
         .changelog-content .close-btn:hover { background: var(--accent-gradient); color: #fff; transform: scale(1.02); }
 
-        /* ===== BOARD ===== */
         .board-header {
             display: flex;
             justify-content: space-between;
@@ -906,7 +900,6 @@
 
         .stats { color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; animation: slideUp 0.5s ease-out 0.1s both; }
 
-        /* ===== ВКЛАДКИ ===== */
         .board-tabs {
             display: flex;
             gap: 4px;
@@ -939,7 +932,6 @@
         .tab-content { display: none; animation: slideUp 0.3s ease-out; }
         .tab-content.active { display: block; }
 
-        /* ===== ПОИСК ===== */
         .search-sort-bar {
             display: flex;
             flex-wrap: wrap;
@@ -1025,7 +1017,6 @@
             border-color: var(--accent);
         }
 
-        /* ===== ФИЛЬТРЫ ===== */
         .quick-filters {
             display: flex;
             flex-wrap: wrap;
@@ -1055,7 +1046,6 @@
             border-color: var(--accent);
         }
 
-        /* ===== BULK ===== */
         .bulk-actions {
             display: none;
             flex-wrap: wrap;
@@ -1185,6 +1175,8 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(124, 109, 240, 0.15);
         }
+
+        /* ===== КНОПКА ШАБЛОНОВ — ПРОСТАЯ ===== */
         .add-note .template-btn {
             padding: 12px 16px;
             border: none;
@@ -1196,6 +1188,7 @@
             transition: all var(--transition);
             font-size: 15px;
             white-space: nowrap;
+            position: relative;
         }
         .add-note .template-btn:hover {
             background: var(--bg-hover);
@@ -1203,56 +1196,183 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(124, 109, 240, 0.15);
         }
-        .add-note .ai-btn {
-            padding: 12px 16px;
-            border: none;
-            border-radius: 12px;
+
+        /* ===== МОДАЛКА ШАБЛОНОВ ===== */
+        .templates-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            animation: fadeIn 0.3s ease;
+            backdrop-filter: blur(8px);
+            padding: 20px;
+        }
+        .templates-modal-content {
             background: var(--bg-secondary);
-            color: var(--text-secondary);
-            cursor: pointer;
+            padding: 32px;
+            border-radius: 24px;
+            max-width: 480px;
+            width: 100%;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease-out;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .templates-modal-content h3 {
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            font-size: 24px;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+        }
+        .templates-modal-content .templates-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .templates-modal-content .template-card {
+            padding: 14px 18px;
+            border-radius: 12px;
+            background: var(--bg-hover);
             border: 1px solid var(--border-color);
+            cursor: pointer;
             transition: all var(--transition);
-            font-size: 15px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .templates-modal-content .template-card:hover {
+            background: var(--bg-input);
+            border-color: var(--accent);
+            transform: translateX(6px);
+            color: var(--text-primary);
+        }
+        .templates-modal-content .template-card .icon { font-size: 20px; }
+        .templates-modal-content .template-card .name { font-weight: 500; }
+        .templates-modal-content .template-card .preview {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: auto;
+            opacity: 0.7;
+        }
+        .templates-modal-content .template-card.saved {
+            border-color: var(--accent);
+            background: rgba(124, 109, 240, 0.1);
+        }
+        .templates-modal-content .template-card.saved:hover {
+            background: rgba(124, 109, 240, 0.2);
+        }
+        .templates-modal-content .divider {
+            border-top: 1px solid var(--border-color);
+            margin: 8px 0 12px 0;
+            padding-top: 8px;
+            color: var(--text-muted);
+            font-size: 12px;
+            text-align: center;
+        }
+        .templates-modal-content .save-template-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .templates-modal-content .save-template-area input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            min-width: 140px;
+        }
+        .templates-modal-content .save-template-area input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(124, 109, 240, 0.15);
+        }
+        .templates-modal-content .save-template-area button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            background: var(--accent-gradient);
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all var(--transition);
             white-space: nowrap;
         }
-        .add-note .ai-btn:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(124, 109, 240, 0.15);
+        .templates-modal-content .save-template-area button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(124, 109, 240, 0.3);
         }
-
-        .template-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        .template-dropdown-content {
-            display: none;
-            position: absolute;
-            background: var(--bg-secondary);
-            min-width: 220px;
-            border: 1px solid var(--border-color);
+        .templates-modal-content .close-modal-btn {
+            margin-top: 16px;
+            padding: 12px 20px;
+            border: none;
             border-radius: 12px;
-            box-shadow: var(--shadow);
-            z-index: 50;
-            padding: 6px 0;
-            margin-top: 4px;
-            animation: slideUp 0.2s ease-out;
-        }
-        .template-dropdown-content.show { display: block; }
-        .template-dropdown-content .template-item {
-            padding: 10px 18px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: all var(--transition);
-            font-size: 14px;
-        }
-        .template-dropdown-content .template-item:hover {
             background: var(--bg-hover);
-            color: var(--text-primary);
-            padding-left: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+            transition: all var(--transition);
+        }
+        .templates-modal-content .close-modal-btn:hover {
+            background: var(--accent-gradient);
+            color: #fff;
+            transform: scale(1.02);
+        }
+        .templates-modal-content .delete-template-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0 4px;
+            opacity: 0.4;
+            transition: all 0.3s ease;
+            margin-left: auto;
+        }
+        .templates-modal-content .delete-template-btn:hover {
+            opacity: 1;
+            transform: scale(1.2);
         }
 
+        @media (max-width: 600px) {
+            .templates-modal-content {
+                padding: 24px 20px;
+                max-width: 100%;
+                margin: 0 10px;
+            }
+            .templates-modal-content .template-card {
+                padding: 12px 14px;
+                font-size: 13px;
+            }
+            .templates-modal-content .save-template-area {
+                flex-direction: column;
+            }
+            .templates-modal-content .save-template-area input {
+                width: 100%;
+            }
+            .templates-modal-content .save-template-area button {
+                width: 100%;
+            }
+        }
+
+        /* ===== ОСТАЛЬНЫЕ СТИЛИ ===== */
         .tag-suggestions {
             display: none;
             position: absolute;
@@ -1316,7 +1436,6 @@
         }
         .view-group button:hover:not(.active-view) { background: var(--bg-hover); color: var(--text-primary); transform: scale(1.05); }
 
-        /* ===== ТЕГИ ===== */
         .tag-stats {
             display: flex;
             flex-wrap: wrap;
@@ -1364,7 +1483,6 @@
         }
         .tag-stats .stat-item:hover .count { background: rgba(255, 255, 255, 0.2); }
 
-        /* ===== ЗАМЕТКИ ===== */
         .notes-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1537,7 +1655,6 @@
         .footer:hover { opacity: 1; }
         .footer span { color: var(--accent); }
 
-        /* ===== МОДАЛКИ ===== */
         .color-modal, .reminder-modal, .export-modal, .history-modal, .attachment-modal, .voice-modal {
             position: fixed;
             inset: 0;
@@ -1756,7 +1873,6 @@
         }
         .export-modal-content .export-options button:hover { background: var(--accent-gradient); color: #fff; border-color: var(--accent); transform: scale(1.02); }
 
-        /* ===== КАЛЕНДАРЬ ===== */
         .calendar-container {
             background: var(--bg-secondary);
             border-radius: 16px;
@@ -1827,7 +1943,6 @@
         .calendar-notes .note-item:hover { transform: translateX(4px); background: var(--bg-hover); }
         .calendar-notes .empty-msg { color: var(--text-muted); font-size: 14px; text-align: center; padding: 16px 0; margin-top: 0; }
 
-        /* ===== MEDIA ===== */
         @media (max-width: 600px) {
             .welcome { margin: 20px auto; padding: 24px 16px; }
             .welcome h1 { font-size: 36px; }
@@ -1836,8 +1951,8 @@
             .welcome .subtitle { font-size: 15px; }
             .board-tabs { flex-wrap: wrap; }
             .board-tabs .tab { flex: 1 1 30%; padding: 8px 12px; font-size: 12px; }
-            .add-note .note-input { min-width: 120px; }
-            .add-note .tag-input { min-width: 100px; }
+            .add-note .note-input { min-width: 100%; }
+            .add-note .tag-input { min-width: 100%; }
             .add-note .add-btn { padding: 10px 16px; font-size: 13px; }
             .notes-grid { grid-template-columns: 1fr; }
             .board-header h1 { font-size: 22px; }
@@ -1868,8 +1983,11 @@
         @media (max-width: 400px) {
             .board-tabs .tab { flex: 1 1 45%; font-size: 11px; padding: 6px 8px; }
             .add-note { gap: 6px; }
-            .add-note .note-input { font-size: 13px; padding: 10px 12px; }
-            .add-note .tag-input { font-size: 13px; padding: 10px 12px; }
+            .add-note .note-input { font-size: 16px; padding: 12px 14px; }
+            .add-note .tag-input { font-size: 16px; padding: 12px 14px; }
+            .add-note .add-btn { font-size: 14px; padding: 10px 14px; }
+            .add-note .voice-btn { font-size: 14px; padding: 10px 14px; }
+            .add-note .template-btn { font-size: 14px; padding: 10px 14px; }
             .welcome h1 { font-size: 28px; }
             .welcome .greeting { font-size: 18px; }
         }
@@ -1879,7 +1997,6 @@
     <div class="stars-container" id="starsContainer"></div>
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- PIN OVERLAY -->
     <div class="pin-overlay hidden" id="pinOverlay">
         <div class="pin-box">
             <h2 id="pinTitle">🔐 Введите PIN-код</h2>
@@ -1911,7 +2028,6 @@
         </div>
     </div>
 
-    <!-- AUTH OVERLAY -->
     <div class="auth-overlay hidden" id="authOverlay">
         <div class="auth-box">
             <h2 id="authTitle">🔐 Вход</h2>
@@ -1944,7 +2060,6 @@
         </div>
     </div>
 
-    <!-- PROFILE OVERLAY -->
     <div class="profile-overlay hidden" id="profileOverlay">
         <div class="profile-box">
             <div class="avatar" id="profileAvatar">👤</div>
@@ -1960,10 +2075,7 @@
         </div>
     </div>
 
-    <!-- APP -->
     <div class="app" id="app">
-        
-        <!-- ===== WELCOME PAGE ===== -->
         <div class="page active" id="welcomePage">
             <div class="welcome">
                 <div class="version-top">v1.9.0</div>
@@ -1971,7 +2083,6 @@
                 <div class="subtitle">Минималистично. Удобно. Твоё.</div>
                 <div class="greeting" id="greeting">🌙 Доброй ночи!</div>
 
-                <!-- КНОПКИ -->
                 <div class="action-group">
                     <button class="action-btn primary" onclick="goToBoard()">
                         <span class="icon">🚀</span> Начать работу
@@ -1990,7 +2101,6 @@
                     </button>
                 </div>
 
-                <!-- ТЕМЫ -->
                 <div class="theme-selector">
                     <label>🌓 Выбор темы</label>
                     <div class="theme-options">
@@ -2002,10 +2112,9 @@
             </div>
         </div>
 
-        <!-- ===== INSTRUCTIONS PAGE ===== -->
         <div class="page" id="instructionsPage">
             <div class="instructions">
-                <h2>📖 Как пользоваться доской v1.9.0</h2>
+                <h2>📖 Как пользоваться доской</h2>
                 
                 <div class="instruction-block">
                     <div class="block-title">📌 База</div>
@@ -2050,7 +2159,6 @@
             </div>
         </div>
 
-        <!-- ===== BOARD PAGE ===== -->
         <div class="page" id="boardPage">
             <div class="board-header">
                 <h1>📌 Доска заметок</h1>
@@ -2070,16 +2178,13 @@
 
             <div class="stats">📝 Всего: <span id="count">0</span></div>
 
-            <!-- ВКЛАДКИ -->
             <div class="board-tabs" id="boardTabs">
                 <button class="tab active" data-tab="notes" onclick="switchTab('notes')">📝 Заметки</button>
                 <button class="tab" data-tab="activity" onclick="switchTab('activity')">📊 Активность</button>
                 <button class="tab" data-tab="calendar" onclick="switchTab('calendar')">📅 Календарь</button>
             </div>
 
-            <!-- ===== ВКЛАДКА: ЗАМЕТКИ ===== -->
             <div class="tab-content active" id="tabNotes">
-                <!-- ПОИСК -->
                 <div class="search-sort-bar">
                     <div class="search-wrap">
                         <span class="search-icon">🔍</span>
@@ -2096,7 +2201,6 @@
                     </div>
                 </div>
 
-                <!-- РАСШИРЕННЫЙ ПОИСК -->
                 <div class="search-advanced" id="advancedSearch">
                     <input type="text" id="searchTag" placeholder="🏷️ Тег (#работа)" oninput="render()" />
                     <input type="date" id="searchDate" oninput="render()" />
@@ -2108,7 +2212,6 @@
                     <button onclick="clearAdvancedSearch()" style="padding:6px 12px;border:none;border-radius:8px;background:var(--danger);color:#fff;cursor:pointer;">✕ Очистить</button>
                 </div>
 
-                <!-- ФИЛЬТРЫ -->
                 <div class="quick-filters">
                     <span class="filter-label">🎯 Фильтры:</span>
                     <button class="filter-btn active" data-filter="all" onclick="setQuickFilter('all')">Все</button>
@@ -2119,7 +2222,6 @@
                     <button class="filter-btn" data-filter="locked" onclick="setQuickFilter('locked')">🔒 Защищённые</button>
                 </div>
 
-                <!-- BULK ACTIONS -->
                 <div class="bulk-actions" id="bulkActions">
                     <span class="bulk-info">📌 Выбрано: <span id="selectedCount">0</span></span>
                     <button onclick="bulkPin()">📌 Закрепить</button>
@@ -2132,7 +2234,7 @@
                     <button onclick="clearSelection()">✕ Снять выделение</button>
                 </div>
 
-                <!-- TOOLBAR -->
+                <!-- ===== TOOLBAR ===== -->
                 <div class="toolbar">
                     <div class="add-note">
                         <input type="text" class="note-input" id="noteInput" placeholder="Введите заметку..." />
@@ -2142,17 +2244,7 @@
                         </div>
                         <button class="add-btn" onclick="addNote()">➕ Добавить</button>
                         <button class="voice-btn" onclick="showVoiceModal()" title="Диктуйте текст голосом">🎙️ Голос</button>
-                        <div class="template-dropdown">
-                            <button class="template-btn" onclick="toggleTemplates()">📋 Шаблоны ▾</button>
-                            <div class="template-dropdown-content" id="templateDropdown">
-                                <div class="template-item" onclick="applyTemplate('📝 Список дел:\n- [ ] Задача 1\n- [ ] Задача 2\n- [ ] Задача 3')">📝 Список дел</div>
-                                <div class="template-item" onclick="applyTemplate('💡 Идея:\n\nОписание идеи...')">💡 Идея</div>
-                                <div class="template-item" onclick="applyTemplate('📚 Заметка:\n\nТекст заметки...')">📚 Заметка</div>
-                                <div class="template-item" onclick="applyTemplate('✅ Чек-лист:\n- [ ] Пункт 1\n- [ ] Пункт 2\n- [ ] Пункт 3')">✅ Чек-лист</div>
-                                <div class="template-item" onclick="applyTemplate('📅 План на день:\n1. Утро\n2. День\n3. Вечер')">📅 План на день</div>
-                                <div class="template-item" onclick="saveTemplate()">💾 Сохранить шаблон</div>
-                            </div>
-                        </div>
+                        <button class="template-btn" onclick="openTemplatesModal()">📋 Шаблоны</button>
                     </div>
 
                     <div class="search-sort-bar" style="margin-bottom:0;box-shadow:none;border:none;padding:0;">
@@ -2174,14 +2266,11 @@
                     </div>
                 </div>
 
-                <!-- ТЕГИ -->
                 <div class="tag-stats" id="tagStats"></div>
 
-                <!-- ЗАМЕТКИ -->
                 <div class="notes-grid" id="notesContainer"></div>
             </div>
 
-            <!-- ===== ВКЛАДКА: АКТИВНОСТЬ ===== -->
             <div class="tab-content" id="tabActivity">
                 <div style="padding: 20px; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border-color);">
                     <div class="activity-chart" id="activityChartBoard"></div>
@@ -2210,7 +2299,6 @@
                 </div>
             </div>
 
-            <!-- ===== ВКЛАДКА: КАЛЕНДАРЬ ===== -->
             <div class="tab-content" id="tabCalendar">
                 <div class="calendar-container" id="calendarContainer">
                     <div class="calendar-header">
@@ -2235,10 +2323,7 @@
     </div>
 
     <script>
-        // ================================================================
-        //  ПОЛНЫЙ JS v1.9.0 - ВСЁ РАБОТАЕТ!
-        // ================================================================
-        
+        // ===== ВЕСЬ JS (без ИИ) =====
         const VERSION = '1.9.0';
         let notes = [];
         let trash = [];
@@ -2282,9 +2367,6 @@
             '#0984e3', '#6c5ce7', '#00cec9', '#fd79a8'
         ];
 
-        // ================================================================
-        //  ПОЛНАЯ ИСТОРИЯ ВЕРСИЙ (CHANGELOG) - КАК В v1.7.0/v1.8.0
-        // ================================================================
         const CHANGELOG = [{
             version: '1.9.0',
             date: '23.07.2026',
@@ -2393,7 +2475,7 @@
             ]
         }];
 
-        // ===== ВСПОМОГАТЕЛЬНЫЕ =====
+        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
         function showToast(message, type = 'info') {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
@@ -2548,7 +2630,6 @@
                 chart.innerHTML = html;
             });
 
-            // Статистика активности
             const total = notes.length;
             const todayStr = new Date().toISOString().slice(0, 10);
             const todayCount = notes.filter(n => n.date && n.date.startsWith(todayStr)).length;
@@ -2704,7 +2785,6 @@
             }, 300);
         }
 
-        // ===== ВКЛАДКИ =====
         function switchTab(tab) {
             document.querySelectorAll('.board-tabs .tab').forEach(t => {
                 t.classList.toggle('active', t.dataset.tab === tab);
@@ -2720,7 +2800,7 @@
             }
         }
 
-        // ===== РАСШИРЕННЫЙ ПОИСК =====
+        // ===== ПОИСК =====
         function toggleAdvancedSearch() {
             const el = document.getElementById('advancedSearch');
             if (el) el.classList.toggle('show');
@@ -2761,7 +2841,6 @@
             return result;
         }
 
-        // ===== СМАРТ ФИЛЬТРЫ =====
         function toggleSmartFilter(filter) {
             const chips = document.querySelectorAll('.filter-chip');
             if (activeSmartFilters.has(filter)) activeSmartFilters.delete(filter);
@@ -2793,7 +2872,7 @@
             return result;
         }
 
-        // ===== КАСТОМНЫЕ ТЕМЫ =====
+        // ===== АВТОРИЗАЦИЯ =====
         function loadCustomThemes() {
             const saved = localStorage.getItem('mini_notes_custom_themes');
             if (saved) {
@@ -2805,7 +2884,6 @@
             localStorage.setItem('mini_notes_custom_themes', JSON.stringify(customThemes));
         }
 
-        // ===== ОСНОВНЫЕ ФУНКЦИИ (АВТОРИЗАЦИЯ, ПИН, СОХРАНЕНИЕ) =====
         function loadUsers() {
             const saved = localStorage.getItem('mini_notes_users');
             if (saved) { try { users = JSON.parse(saved); } catch { users = {}; } }
@@ -3024,6 +3102,7 @@
             showToast('✅ Пароль изменён', 'success');
         }
 
+        // ===== ЗАГРУЗКА ЗАМЕТОК =====
         function loadUserNotes() {
             if (currentUser && users[currentUser.email]) {
                 notes = users[currentUser.email].notes || [];
@@ -3133,7 +3212,7 @@
             updateTrashCount();
         };
 
-        // ===== ПИН-КОД =====
+        // ===== PIN-КОД =====
         function loadPin() {
             const saved = localStorage.getItem('mini_notes_pin');
             if (saved) {
@@ -3484,7 +3563,7 @@
             showToast('🗑️ Вложение удалено', 'info');
         }
 
-        // ===== ГОЛОСОВЫЕ ЗАМЕТКИ =====
+        // ===== ГОЛОС =====
         function showVoiceModal() {
             const modal = document.createElement('div');
             modal.className = 'voice-modal';
@@ -3915,7 +3994,7 @@
             render();
         }
 
-        // ===== ПОИСК, ФИЛЬТРЫ, СОРТИРОВКА =====
+        // ===== ОСНОВНЫЕ ДЕЙСТВИЯ =====
         function setQuickFilter(filter) {
             quickFilter = filter;
             document.querySelectorAll('.quick-filters .filter-btn').forEach(btn => {
@@ -3971,7 +4050,7 @@
             });
         }
 
-        // ===== BULK ACTIONS =====
+        // ===== BULK =====
         function toggleSelectNote(id) {
             if (selectedNotes.has(id)) selectedNotes.delete(id);
             else selectedNotes.add(id);
@@ -4089,7 +4168,6 @@
             showToast(`🎨 Цвет применён к ${selected.length} заметкам`, 'success');
         }
 
-        // ===== VIEW =====
         function setView(view) {
             currentView = view;
             document.querySelectorAll('.view-group button').forEach(btn => {
@@ -4098,7 +4176,7 @@
             render();
         }
 
-        // ===== ОСНОВНЫЕ ДЕЙСТВИЯ С ЗАМЕТКАМИ =====
+        // ===== ЗАМЕТКИ =====
         function parseChecklist(text) {
             const lines = text.split('\n');
             const checklist = [];
@@ -4312,7 +4390,6 @@
             if (tagInput) tagInput.focus();
         }
 
-        // Подключаем автодополнение для тегов
         const tagInput = document.getElementById('tagInput');
         if (tagInput) {
             tagInput.addEventListener('input', updateTagSuggestions);
@@ -4335,6 +4412,7 @@
             if (trashCount) trashCount.textContent = trash.length;
         }
 
+        // ===== SHOW TRASH =====
         function showTrash() {
             showTrashMode = !showTrashMode;
             const btn = document.querySelector('.trash-btn');
@@ -4360,7 +4438,7 @@
             
             container.className = 'notes-grid' + (currentView === 'list' ? ' list-view' : '');
 
-            // КНОПКА "ВЕРНУТЬСЯ К ДОСКЕ" В КОРЗИНЕ
+            // Кнопка "Вернуться к доске" в корзине
             if (showTrashMode) {
                 const backBtnHtml = `
                     <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -4371,14 +4449,11 @@
                         <span style="color:var(--text-muted);font-size:12px;margin-left:auto;">💡 Нажмите Enter для возврата</span>
                     </div>
                 `;
-                // Добавляем кнопку в начало контейнера с заметками
-                // Вставляем перед заметками через внешний div
-                const emptyDiv = document.createElement('div');
-                emptyDiv.id = 'trashHeader';
-                if (!document.getElementById('trashHeader')) {
+                const header = document.getElementById('trashHeader');
+                if (!header) {
                     container.insertAdjacentHTML('beforebegin', `<div id="trashHeader">${backBtnHtml}</div>`);
                 } else {
-                    document.getElementById('trashHeader').innerHTML = backBtnHtml;
+                    header.innerHTML = backBtnHtml;
                 }
             } else {
                 const header = document.getElementById('trashHeader');
@@ -4559,7 +4634,124 @@
             renderCalendar();
         }
 
-        // ===== ЭКСПОРТ / ИМПОРТ =====
+        // ===== ШАБЛОНЫ — НОВАЯ МОДАЛКА =====
+        function openTemplatesModal() {
+            const modal = document.createElement('div');
+            modal.className = 'templates-modal';
+            modal.setAttribute('tabindex', '0');
+            
+            const savedTemplates = JSON.parse(localStorage.getItem('mini_notes_templates') || '[]');
+            
+            let templatesHtml = '';
+            
+            // Стандартные шаблоны
+            const defaultTemplates = [
+                { icon: '📝', name: 'Список дел', text: '📝 Список дел:\n- [ ] Задача 1\n- [ ] Задача 2\n- [ ] Задача 3' },
+                { icon: '💡', name: 'Идея', text: '💡 Идея:\n\nОписание идеи...' },
+                { icon: '📚', name: 'Заметка', text: '📚 Заметка:\n\nТекст заметки...' },
+                { icon: '✅', name: 'Чек-лист', text: '✅ Чек-лист:\n- [ ] Пункт 1\n- [ ] Пункт 2\n- [ ] Пункт 3' },
+                { icon: '📅', name: 'План на день', text: '📅 План на день:\n1. Утро\n2. День\n3. Вечер' }
+            ];
+            
+            defaultTemplates.forEach(t => {
+                templatesHtml += `
+                    <div class="template-card" onclick="applyTemplateFromModal(\`${t.text.replace(/`/g, '\\`')}\`)">
+                        <span class="icon">${t.icon}</span>
+                        <span class="name">${t.name}</span>
+                        <span class="preview">${t.text.substring(0, 30)}...</span>
+                    </div>
+                `;
+            });
+            
+            // Сохранённые шаблоны
+            if (savedTemplates.length > 0) {
+                templatesHtml += `<div class="divider">📁 Сохранённые шаблоны</div>`;
+                savedTemplates.forEach((t, index) => {
+                    templatesHtml += `
+                        <div class="template-card saved">
+                            <span class="icon">💾</span>
+                            <span class="name">${t.name}</span>
+                            <span class="preview">${t.text.substring(0, 30)}...</span>
+                            <button class="delete-template-btn" onclick="deleteTemplate(${index}); event.stopPropagation();" title="Удалить шаблон">✕</button>
+                        </div>
+                    `;
+                });
+            }
+            
+            modal.innerHTML = `
+                <div class="templates-modal-content">
+                    <h3>📋 Шаблоны</h3>
+                    <div class="templates-grid">
+                        ${templatesHtml}
+                    </div>
+                    <div class="save-template-area">
+                        <input type="text" id="templateNameInput" placeholder="Название шаблона..." />
+                        <button onclick="saveTemplateFromModal()">💾 Сохранить текущую заметку как шаблон</button>
+                    </div>
+                    <button class="close-modal-btn" onclick="this.closest('.templates-modal').remove()">✕ Закрыть</button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.focus();
+            
+            // Закрытие по клику вне модалки
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) this.remove();
+            });
+            
+            // Закрытие по Escape
+            modal.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    this.remove();
+                }
+            });
+        }
+        
+        function applyTemplateFromModal(text) {
+            const noteInput = document.getElementById('noteInput');
+            if (noteInput) noteInput.value = text;
+            document.querySelector('.templates-modal')?.remove();
+            if (noteInput) noteInput.focus();
+            showToast('📋 Шаблон применён', 'success');
+        }
+        
+        function saveTemplateFromModal() {
+            const nameInput = document.getElementById('templateNameInput');
+            const noteInput = document.getElementById('noteInput');
+            const name = nameInput ? nameInput.value.trim() : '';
+            const text = noteInput ? noteInput.value.trim() : '';
+            
+            if (!text) {
+                showToast('❌ Напишите заметку для сохранения шаблона', 'error');
+                return;
+            }
+            if (!name) {
+                showToast('❌ Введите название шаблона', 'error');
+                return;
+            }
+            
+            const savedTemplates = JSON.parse(localStorage.getItem('mini_notes_templates') || '[]');
+            savedTemplates.push({ name, text });
+            localStorage.setItem('mini_notes_templates', JSON.stringify(savedTemplates));
+            
+            document.querySelector('.templates-modal')?.remove();
+            showToast(`✅ Шаблон "${name}" сохранён!`, 'success');
+        }
+        
+        function deleteTemplate(index) {
+            const savedTemplates = JSON.parse(localStorage.getItem('mini_notes_templates') || '[]');
+            const name = savedTemplates[index]?.name || 'шаблон';
+            if (!confirm(`Удалить шаблон "${name}"?`)) return;
+            savedTemplates.splice(index, 1);
+            localStorage.setItem('mini_notes_templates', JSON.stringify(savedTemplates));
+            document.querySelector('.templates-modal')?.remove();
+            openTemplatesModal();
+            showToast(`🗑️ Шаблон "${name}" удалён`, 'info');
+        }
+
+        // ===== ЭКСПОРТ =====
         function showExportModal() {
             const modal = document.createElement('div');
             modal.className = 'export-modal';
@@ -4821,6 +5013,7 @@
             document.querySelectorAll('.attachment-modal').forEach(el => el.remove());
             document.querySelectorAll('.voice-modal').forEach(el => el.remove());
             document.querySelectorAll('.confirm-modal').forEach(el => el.remove());
+            document.querySelectorAll('.templates-modal').forEach(el => el.remove());
         }
 
         function importJSON(file) {
@@ -5077,249 +5270,6 @@
 
         window.loadTrash = function() {};
 
-        // ===== ШАБЛОНЫ =====
-        function saveTemplate() {
-            const noteInput = document.getElementById('noteInput');
-            const text = noteInput ? noteInput.value.trim() : '';
-            if (!text) { showToast('❌ Напишите заметку для сохранения шаблона', 'error'); return; }
-
-            const name = prompt('📋 Введите название шаблона:');
-            if (!name) return;
-
-            const savedTemplates = JSON.parse(localStorage.getItem('mini_notes_templates') || '[]');
-            savedTemplates.push({ name, text });
-            localStorage.setItem('mini_notes_templates', JSON.stringify(savedTemplates));
-            updateTemplateDropdown();
-            showToast(`✅ Шаблон "${name}" сохранён!`, 'success');
-        }
-
-        function updateTemplateDropdown() {
-            const dropdown = document.getElementById('templateDropdown');
-            if (!dropdown) return;
-
-            const savedTemplates = JSON.parse(localStorage.getItem('mini_notes_templates') || '[]');
-            
-            let html = `
-                <div class="template-item" onclick="applyTemplate('📝 Список дел:\\n- [ ] Задача 1\\n- [ ] Задача 2\\n- [ ] Задача 3')">📝 Список дел</div>
-                <div class="template-item" onclick="applyTemplate('💡 Идея:\\n\\nОписание идеи...')">💡 Идея</div>
-                <div class="template-item" onclick="applyTemplate('📚 Заметка:\\n\\nТекст заметки...')">📚 Заметка</div>
-                <div class="template-item" onclick="applyTemplate('✅ Чек-лист:\\n- [ ] Пункт 1\\n- [ ] Пункт 2\\n- [ ] Пункт 3')">✅ Чек-лист</div>
-                <div class="template-item" onclick="applyTemplate('📅 План на день:\\n1. Утро\\n2. День\\n3. Вечер')">📅 План на день</div>
-            `;
-
-            if (savedTemplates.length > 0) {
-                html += `<div style="border-top:1px solid var(--border-color);margin:4px 0;padding:4px 0;"></div>`;
-                savedTemplates.forEach(t => {
-                    html += `<div class="template-item" onclick="applyTemplate(\`${t.text.replace(/`/g, '\\`')}\`)">💾 ${t.name}</div>`;
-                });
-            }
-
-            html += `<div style="border-top:1px solid var(--border-color);margin:4px 0;padding:4px 0;"></div>`;
-            html += `<div class="template-item" onclick="saveTemplate()">💾 Сохранить шаблон</div>`;
-
-            dropdown.innerHTML = html;
-        }
-
-        function toggleTemplates() {
-            const dropdown = document.getElementById('templateDropdown');
-            if (dropdown) dropdown.classList.toggle('show');
-        }
-
-        function applyTemplate(text) {
-            const noteInput = document.getElementById('noteInput');
-            if (noteInput) noteInput.value = text;
-            const dropdown = document.getElementById('templateDropdown');
-            if (dropdown) dropdown.classList.remove('show');
-            if (noteInput) noteInput.focus();
-        }
-
-        document.addEventListener('click', function(e) {
-            const dropdown = document.getElementById('templateDropdown');
-            const btn = e.target.closest('.template-btn');
-            if (!btn && dropdown) dropdown.classList.remove('show');
-        });
-
-            const suggestion = similarNotes[0].text;
-            const modal = document.createElement('div');
-            modal.className = 'voice-modal';
-            modal.innerHTML = `
-                <div class="voice-modal-content">
-                    <h3>🤖 ИИ-помощник</h3>
-                    <div class="voice-status">
-                        <div class="transcript" style="min-height:80px;">
-                            <strong>Ваш текст:</strong><br>
-                            ${text}
-                            <br><br>
-                            <strong>Предложение:</strong><br>
-                            ${suggestion}
-                        </div>
-                    </div>
-                    <div class="voice-controls">
-                        <button class="apply-btn" onclick="applyAISuggestion('${suggestion.replace(/'/g, "\\'")}')">✅ Применить</button>
-                        <button class="start-btn" onclick="this.closest('.voice-modal').remove()">✕ Отмена</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        }
-
-        function applyAISuggestion(text) {
-            const noteInput = document.getElementById('noteInput');
-            if (noteInput) noteInput.value = text;
-            document.querySelector('.voice-modal')?.remove();
-            showToast('🤖 ИИ-предложение применено!', 'success');
-            if (noteInput) noteInput.focus();
-        }
-
-        // ===== ГОРЯЧИЕ КЛАВИШИ =====
-        document.addEventListener('keydown', (e) => {
-            // Enter на доске — добавляет заметку (если не в корзине)
-            if (e.key === 'Enter' && document.getElementById('boardPage').classList.contains('active')) {
-                // Если в корзине — возвращаем на доску
-                if (showTrashMode) {
-                    e.preventDefault();
-                    showTrash();
-                    return;
-                }
-                const searchInput = document.getElementById('searchInput');
-                if (document.activeElement && document.activeElement.id === 'searchInput') return;
-                if (document.querySelector('.color-modal, .reminder-modal, .export-modal, .history-modal, .attachment-modal, .voice-modal, .confirm-modal, .changelog-modal')) return;
-                e.preventDefault();
-                addNote();
-                return;
-            }
-
-            if (e.key === 'Escape') {
-                closeColorModal();
-                document.querySelectorAll('.changelog-modal').forEach(el => el.remove());
-                document.querySelectorAll('.export-modal').forEach(el => el.remove());
-                document.querySelectorAll('.reminder-modal').forEach(el => el.remove());
-                document.querySelectorAll('.history-modal').forEach(el => el.remove());
-                document.querySelectorAll('.attachment-modal').forEach(el => el.remove());
-                document.querySelectorAll('.voice-modal').forEach(el => el.remove());
-                document.querySelectorAll('.confirm-modal').forEach(el => el.remove());
-                const templateDropdown = document.getElementById('templateDropdown');
-                if (templateDropdown) templateDropdown.classList.remove('show');
-                const tagSuggestions = document.getElementById('tagSuggestions');
-                if (tagSuggestions) tagSuggestions.classList.remove('show');
-                if (document.getElementById('instructionsPage').classList.contains('active')) showWelcome();
-                else if (showTrashMode) showTrash();
-                if (isRecording) stopRecording();
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-                if (document.getElementById('boardPage').classList.contains('active')) {
-                    e.preventDefault();
-                    undoAction();
-                }
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-                if (document.getElementById('boardPage').classList.contains('active')) {
-                    e.preventDefault();
-                    redoAction();
-                }
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') {
-                if (document.getElementById('boardPage').classList.contains('active')) {
-                    e.preventDefault();
-                    redoAction();
-                }
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
-                if (document.getElementById('boardPage').classList.contains('active')) {
-                    e.preventDefault();
-                    const items = getDisplayedNotes();
-                    if (items.length > 0) {
-                        const allSelected = items.every(n => selectedNotes.has(n.id));
-                        if (allSelected) {
-                            clearSelection();
-                            showToast('✕ Снято выделение со всех', 'info');
-                        } else {
-                            items.forEach(n => selectedNotes.add(n.id));
-                            updateBulkUI();
-                            render();
-                            showToast(`✅ Выделено ${items.length} заметок`, 'success');
-                        }
-                    }
-                }
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-                if (document.getElementById('boardPage').classList.contains('active')) {
-                    e.preventDefault();
-                    if (selectedNotes.size > 0) bulkDelete();
-                    else showToast('ℹ️ Нет выделенных заметок', 'info');
-                }
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-                if (document.getElementById('boardPage').classList.contains('active')) {
-                    e.preventDefault();
-                    if (selectedNotes.size > 0) bulkPin();
-                    else showToast('ℹ️ Нет выделенных заметок', 'info');
-                }
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') {
-                e.preventDefault();
-                if (document.getElementById('boardPage').classList.contains('active')) lockBoard();
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'R') {
-                e.preventDefault();
-                openAuth('register');
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') {
-                e.preventDefault();
-                if (currentUser) openProfile();
-                else openAuth('login');
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                if (document.getElementById('boardPage').classList.contains('active')) {
-                    e.preventDefault();
-                    const searchInput = document.getElementById('searchInput');
-                    if (searchInput) searchInput.focus();
-                }
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'T') {
-                if (document.getElementById('boardPage').classList.contains('active')) {
-                    e.preventDefault();
-                    const tagInput = document.getElementById('tagInput');
-                    if (tagInput) tagInput.focus();
-                }
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'U') {
-                if (document.getElementById('boardPage').classList.contains('active')) {
-                    e.preventDefault();
-                    const firstNote = getDisplayedNotes()[0];
-                    if (firstNote) showAttachmentModal(firstNote.id);
-                }
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'H') {
-                if (document.getElementById('boardPage').classList.contains('active')) {
-                    e.preventDefault();
-                    const firstNote = getDisplayedNotes()[0];
-                    if (firstNote) showHistory(firstNote.id);
-                }
-            }
-
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
-                if (document.getElementById('boardPage').classList.contains('active')) {
-                    e.preventDefault();
-                    const noteInput = document.getElementById('noteInput');
-                    if (noteInput) noteInput.focus();
-                }
-            }
-        });
-
         // ===== СТАРТ =====
         loadTheme();
         loadPin();
@@ -5341,16 +5291,8 @@
         checkReminders();
         setInterval(checkReminders, 60000);
         autoClearTrash();
-        updateTemplateDropdown();
 
         console.log(`📌 Мини-доска заметок v${VERSION} загружена!`);
-        console.log('✅ ВСЁ РАБОТАЕТ!');
-        console.log('✅ Отдельное поле для тега');
-        console.log('✅ Кнопка "Вернуться к доске" в корзине');
-        console.log('✅ Enter в корзине -> возврат на доску');
-        console.log('✅ Экспорт в DOCX и PDF');
-        console.log('✅ Полная инструкция как в v1.7.0/v1.8.0');
-        console.log('✅ Полный CHANGELOG');
     </script>
 </body>
 </html>
